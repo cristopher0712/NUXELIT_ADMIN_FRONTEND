@@ -13,7 +13,7 @@ const Dashboard = () => {
         const res = await api.get('/projects/dashboard');
         setStats(res.data.data);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching dashboard stats:', err.response || err);
       } finally {
         setLoading(false);
       }
@@ -120,7 +120,12 @@ const Dashboard = () => {
                     cursor={{fill: '#1e1e2d'}}
                     contentStyle={{ backgroundColor: '#14141e', borderColor: '#27273a', borderRadius: '8px' }}
                   />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                    <Legend 
+                    wrapperStyle={{ paddingTop: '20px' }} 
+                    iconType="circle" 
+                    iconSize={8}
+                    formatter={(value) => <span className="text-xs font-medium text-[var(--color-nux-text-muted)] ml-1">{value}</span>}
+                  />
                   <Bar dataKey="Proyectos" fill="var(--color-nux-primary)" radius={[4, 4, 0, 0]} name="Proyectos Entregados" />
                 </BarChart>
               </ResponsiveContainer>
@@ -162,6 +167,9 @@ const Dashboard = () => {
                     verticalAlign="bottom" 
                     align="center"
                     wrapperStyle={{ paddingTop: '20px' }}
+                    iconType="circle" 
+                    iconSize={8}
+                    formatter={(value) => <span className="text-xs font-medium text-[var(--color-nux-text-muted)] ml-1">{value}</span>}
                   />
                 </PieChart>
               </ResponsiveContainer>

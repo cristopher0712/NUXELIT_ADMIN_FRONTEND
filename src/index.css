@@ -59,7 +59,32 @@ body {
   to { transform: rotate(360deg); }
 }
 
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.9); }
+}
+
 .animate-float { animation: float 6s ease-in-out infinite; }
 .animate-float-delayed { animation: float-delayed 8s ease-in-out infinite; }
 .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
 .animate-slow-spin { animation: slow-spin 20s linear infinite; }
+
+/* Fancy Legend Icons */
+.recharts-legend-item-text {
+  transition: color 0.3s ease;
+}
+
+.recharts-legend-item:hover .recharts-legend-item-text {
+  color: white !important;
+}
+
+.recharts-legend-icon {
+  filter: drop-shadow(0 0 5px rgba(124, 58, 237, 0.5));
+  transition: all 0.3s ease;
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+.recharts-legend-item:hover .recharts-legend-icon {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.8));
+}

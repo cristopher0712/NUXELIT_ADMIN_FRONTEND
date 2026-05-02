@@ -18,7 +18,7 @@ const Developers = () => {
       const resStats = await api.get('/developers/public');
       setDevelopers(resStats.data.data);
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching developers:', err.response || err);
     } finally {
       setLoading(false);
     }

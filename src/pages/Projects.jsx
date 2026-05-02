@@ -15,7 +15,7 @@ const Projects = () => {
       const res = await api.get('/projects');
       setProjects(res.data.data);
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching projects:', err.response || err);
     } finally {
       setLoading(false);
     }
