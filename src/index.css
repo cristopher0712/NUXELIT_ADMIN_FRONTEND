@@ -97,6 +97,28 @@ body {
   will-change: transform, filter;
 }
 
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes particle-drift {
+  0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { transform: translateY(-150px) translateX(30px) scale(1.2); opacity: 0; }
+}
+
+.animate-particle {
+  animation: particle-drift linear infinite;
+}
+
 .animate-slow-spin { animation: slow-spin 20s linear infinite; }
 
 /* Fancy Legend Icons */

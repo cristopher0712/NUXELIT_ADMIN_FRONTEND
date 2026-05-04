@@ -1,11 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Briefcase, CheckCircle, Clock, DollarSign, Hexagon } from 'lucide-react';
+import { Briefcase, CheckCircle, Clock, DollarSign, Hexagon, Hourglass, Layout, Code, CheckSquare, AlertTriangle, PauseCircle, XCircle, Star, TrendingUp, Layers, Zap, Award, LineChart, Rocket, Crown, Timer } from 'lucide-react';
+
+const ParticlesBackground = () => {
+  const particles = React.useMemo(() => {
+    return Array.from({ length: 40 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      size: `${Math.random() * 2 + 1}px`,
+      duration: `${Math.random() * 20 + 15}s`,
+      delay: `-${Math.random() * 20}s`,
+      opacity: Math.random() * 0.5 + 0.1
+    }));
+  }, []);
+
+  return (
+    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute bg-white rounded-full animate-particle shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+          style={{
+            left: p.left,
+            top: p.top,
+            width: p.size,
+            height: p.size,
+            opacity: p.opacity,
+            animationDuration: p.duration,
+            animationDelay: p.delay,
+          }}
+        ></div>
+      ))}
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hoveredType, setHoveredType] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -24,11 +59,36 @@ const Dashboard = () => {
   if (loading) return <div className="text-[var(--color-nux-text-muted)]">Cargando estadísticas...</div>;
   if (!stats) return <div className="text-red-400">Error al cargar estadísticas</div>;
 
-  // Prepare chart data
-  const chartData = Object.keys(stats.deliveredLast30DaysByType).map(key => ({
-    name: key,
-    Proyectos: stats.deliveredLast30DaysByType[key]
-  }));
+  // Prepare chart data for all statuses
+  const statusLabels = {
+    'PENDIENTE': 'Pendiente',
+    'EN_DISENO': 'Diseño',
+    'EN_DESARROLLO': 'Desarrollo',
+    'TESTING': 'Testing',
+    'ENTREGADO': 'Entregado',
+    'ENTREGADO_TARDE': 'Entregado Tarde',
+    'EN_RETRASO': 'Retrasado',
+    'EN_PAUSA': 'En Pausa',
+    'CANCELADO': 'Cancelado'
+  };
+
+  const statusPriority = {
+    'ENTREGADO': 1,
+    'ENTREGADO_TARDE': 2,
+    'TESTING': 3,
+    'EN_DESARROLLO': 4,
+    'EN_DISENO': 5,
+    'EN_RETRASO': 6,
+    'PENDIENTE': 7,
+    'EN_PAUSA': 8,
+    'CANCELADO': 9
+  };
+
+  const chartData = stats.projectsByStatus ? Object.keys(stats.projectsByStatus).map(key => ({
+    name: statusLabels[key] || key,
+    Proyectos: stats.projectsByStatus[key],
+    originalKey: key
+  })).sort((a, b) => (statusPriority[a.originalKey] || 99) - (statusPriority[b.originalKey] || 99)) : [];
 
   const formatCurrency = (value) => new Intl.NumberFormat('es-US', { style: 'currency', currency: 'USD' }).format(value);
 
@@ -37,13 +97,63 @@ const Dashboard = () => {
     value: stats.activeProjectsByType[key]
   })) : [];
 
-  const COLORS = ['#7c3aed', '#06b6d4', '#f59e0b', '#10b981', '#ec4899'];
+  const DONUT_COLORS = [
+    { id: 'grad-purple', from: '#5b21b6', to: '#a855f7', shadow: '#9333ea', class: 'bg-gradient-to-tr from-purple-800 to-purple-400' },
+    { id: 'grad-cyan', from: '#164e63', to: '#22d3ee', shadow: '#0891b2', class: 'bg-gradient-to-tr from-cyan-800 to-cyan-400' },
+    { id: 'grad-orange', from: '#9a3412', to: '#fb923c', shadow: '#ea580c', class: 'bg-gradient-to-tr from-orange-800 to-orange-400' },
+    { id: 'grad-emerald', from: '#065f46', to: '#34d399', shadow: '#10b981', class: 'bg-gradient-to-tr from-emerald-800 to-emerald-400' },
+    { id: 'grad-rose', from: '#9f1239', to: '#fb7185', shadow: '#e11d48', class: 'bg-gradient-to-tr from-rose-800 to-rose-400' },
+  ];
+
+  const totalTypes = activeTypesData.reduce((sum, d) => sum + d.value, 0);
+  let cumulativePercent = 0;
 
   const statCards = [
-    { title: 'Ingresos de este Mes', value: formatCurrency(stats.financials.monthlyRevenue || 0), icon: <DollarSign size={24} className="text-green-400"/> },
-    { title: 'Proyectos Activos', value: stats.activeProjects, icon: <Briefcase size={24} className="text-blue-400"/> },
-    { title: 'Entregas a Tiempo', value: `${stats.performance.onTimePercentage}%`, icon: <Clock size={24} className="text-purple-400"/> },
-    { title: 'Calificación Promedio', value: `${stats.performance.averageRating} / 5`, icon: <CheckCircle size={24} className="text-yellow-400"/> },
+    { 
+      title: 'Ingresos Totales', 
+      value: formatCurrency(stats.financials.monthlyRevenue || 0), 
+      icon: <LineChart size={28} />, 
+      color: 'from-emerald-400 to-green-600', 
+      shadow: 'rgba(16,185,129,0.3)',
+      bg: 'bg-emerald-500/10',
+      textAccent: 'text-emerald-400',
+      bgAccent: 'bg-emerald-400',
+      sub: 'Facturación Acumulada'
+    },
+    { 
+      title: 'Total de Proyectos', 
+      value: stats.totalProjects, 
+      icon: <Hexagon size={28} />, 
+      color: 'from-blue-400 to-cyan-500', 
+      shadow: 'rgba(56,189,248,0.3)',
+      bg: 'bg-blue-500/10',
+      textAccent: 'text-blue-400',
+      bgAccent: 'bg-blue-400',
+      sub: 'Registrados'
+    },
+    { 
+      title: 'Entregas a Tiempo', 
+      value: `${stats.performance.onTimePercentage}%`, 
+      icon: <Timer size={28} />, 
+      color: 'from-purple-400 to-fuchsia-500', 
+      shadow: 'rgba(192,132,252,0.3)',
+      bg: 'bg-purple-500/10',
+      textAccent: 'text-purple-400',
+      bgAccent: 'bg-purple-400',
+      sub: 'Tasa de Eficiencia'
+    },
+    { 
+      title: 'Calificación', 
+      value: `${stats.performance.averageRating}`, 
+      icon: <Award size={28} />, 
+      color: 'from-amber-400 to-orange-500', 
+      shadow: 'rgba(251,191,36,0.3)',
+      bg: 'bg-amber-500/10',
+      textAccent: 'text-amber-400',
+      bgAccent: 'bg-amber-400',
+      sub: 'Promedio de Clientes',
+      suffix: '/ 5.0'
+    }
   ];
 
   return (
@@ -100,16 +210,36 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Metric Cards */}
+      {/* Metric Cards Premium */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, i) => (
-          <div key={i} className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl p-6 flex items-center space-x-4 shadow-lg">
-            <div className="w-12 h-12 rounded-lg bg-[var(--color-nux-surface-hover)] flex items-center justify-center">
-              {card.icon}
-            </div>
-            <div>
-              <p className="text-sm font-medium text-[var(--color-nux-text-muted)]">{card.title}</p>
-              <h3 className="text-2xl font-bold mt-1">{card.value}</h3>
+          <div key={i} className="group relative bg-[#0a0a0f] border border-[var(--color-nux-border)] hover:border-[#2a2a3e] rounded-2xl p-6 overflow-hidden transition-all duration-500 hover:-translate-y-1" style={{ boxShadow: `0 10px 30px -10px ${card.shadow}` }}>
+            
+            {/* Background Glow Effect on hover */}
+            <div className={`absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 rounded-full blur-[50px] opacity-20 group-hover:opacity-40 transition-opacity duration-500 ${card.bg}`}></div>
+            
+            {/* Subtle left accent line */}
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 rounded-r-full opacity-50 group-hover:opacity-100 transition-opacity duration-300 ${card.bg}`}></div>
+            
+            <div className="relative z-10 flex justify-between items-start">
+              <div className="flex flex-col space-y-3">
+                <span className="text-[11px] font-bold text-[var(--color-nux-text-muted)] uppercase tracking-widest">{card.title}</span>
+                <div className="flex items-baseline space-x-1">
+                  <span className={`text-4xl font-black bg-gradient-to-r ${card.color} bg-clip-text text-transparent drop-shadow-sm`}>
+                    {card.value}
+                  </span>
+                  {card.suffix && <span className="text-xs font-bold text-[var(--color-nux-text-muted)]">{card.suffix}</span>}
+                </div>
+                <span className={`text-[10px] font-semibold ${card.textAccent} opacity-80 uppercase tracking-wider`}>{card.sub}</span>
+              </div>
+              
+              <div className="relative transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 origin-center">
+                {/* Safe glow effect without SVG filter */}
+                <div className={`absolute inset-0 ${card.bgAccent} blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-500 rounded-full scale-150`}></div>
+                <div className={`relative z-10 ${card.textAccent}`}>
+                  {card.icon}
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -119,78 +249,197 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Main Bar Chart */}
-        <div className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl p-6 shadow-lg lg:col-span-2 h-[450px] flex flex-col">
-          <h3 className="text-lg font-medium mb-2">Entregados últimos 30 días (Por Tipo)</h3>
+        <div className="bg-gradient-to-br from-[#050508] via-[#12121a] to-[#050508] animate-gradient-shift border border-[var(--color-nux-border)] rounded-xl p-6 shadow-2xl lg:col-span-2 h-[450px] flex flex-col relative overflow-hidden">
+          
+          {/* Animated Particles (Stars) Background */}
+          <ParticlesBackground />
+
+          {/* Ambient passive background orbs */}
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
+            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[var(--color-nux-primary)]/10 rounded-full blur-[80px] animate-slow-spin"></div>
+            <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-purple-900/10 rounded-full blur-[60px] animate-float-delayed"></div>
+          </div>
+
+          <div className="relative z-10 flex flex-col h-full">
+            <h3 className="text-lg font-medium mb-2 text-white/90 drop-shadow-md">Estado General de Proyectos</h3>
           {chartData.length > 0 ? (
-            <div className="flex-1 min-h-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27273a" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94a3b8" tick={{fill: '#94a3b8'}} tickMargin={10} />
-                  <YAxis stroke="#94a3b8" allowDecimals={false} tick={{fill: '#94a3b8'}} />
-                  <Tooltip 
-                    cursor={{fill: '#1e1e2d'}}
-                    contentStyle={{ backgroundColor: '#14141e', borderColor: '#27273a', borderRadius: '8px' }}
-                  />
-                                    <Legend 
-                    wrapperStyle={{ paddingTop: '20px' }} 
-                    iconType="circle" 
-                    iconSize={8}
-                    formatter={(value) => <span className="text-xs font-medium text-[var(--color-nux-text-muted)] ml-1">{value}</span>}
-                  />
-                  <Bar dataKey="Proyectos" fill="var(--color-nux-primary)" radius={[4, 4, 0, 0]} name="Proyectos Entregados" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            (() => {
+              const totalProjects = chartData.reduce((acc, curr) => acc + curr.Proyectos, 0);
+              
+              let step = 2;
+              if (totalProjects > 100) step = 20;
+              else if (totalProjects > 50) step = 10;
+              else if (totalProjects > 20) step = 5;
+
+              const remainder = totalProjects % step;
+              let topGridValue = remainder === 0 ? totalProjects : totalProjects + (step - remainder);
+              
+              // Ensure there's always a step of headroom above the highest possible stack
+              if (topGridValue === totalProjects) {
+                topGridValue += step;
+              }
+
+              const safeTopValue = topGridValue === 0 ? step : topGridValue;
+              const numGridLines = Math.max(safeTopValue / step, 1);
+
+              return (
+                <div className="flex flex-col h-full">
+                  <div className="relative flex-1 mt-8 mb-6 border-l-2 border-b-2 border-[#27273a] flex items-end ml-4">
+                  {/* Horizontal grid lines */}
+                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                    {[...Array(numGridLines)].map((_, i) => {
+                      const val = safeTopValue - (i * step);
+                      return (
+                        <div key={i} className="w-full border-t border-[#27273a] opacity-40 h-0 relative">
+                          <span className="absolute -left-8 -top-3 text-[10px] text-[var(--color-nux-text-muted)] font-bold">
+                            {val}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {/* The 0 line at the very bottom */}
+                    <div className="w-full h-0 relative">
+                      <span className="absolute -left-8 -top-3 text-[10px] text-[var(--color-nux-text-muted)] font-bold">
+                        0
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bars Container */}
+                  <div className="relative w-full h-full flex justify-around items-end z-10 px-2 sm:px-6">
+                    {chartData.map((entry, index) => {
+                      let config;
+                      switch(entry.originalKey) {
+                        case 'PENDIENTE': config = { bgSolid: 'bg-gradient-to-t from-gray-600 to-gray-400', glow: 'shadow-[0_0_15px_rgba(156,163,175,0.4)]' }; break;
+                        case 'EN_DISENO': config = { bgSolid: 'bg-gradient-to-t from-purple-800 to-purple-400', glow: 'shadow-[0_0_15px_rgba(168,85,247,0.4)]' }; break;
+                        case 'EN_DESARROLLO': config = { bgSolid: 'bg-gradient-to-t from-blue-800 to-blue-400', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.4)]' }; break;
+                        case 'TESTING': config = { bgSolid: 'bg-gradient-to-t from-yellow-700 to-yellow-400', glow: 'shadow-[0_0_15px_rgba(234,179,8,0.4)]' }; break;
+                        case 'ENTREGADO': config = { bgSolid: 'bg-gradient-to-t from-emerald-800 to-emerald-400', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.4)]' }; break;
+                        case 'ENTREGADO_TARDE': config = { bgSolid: 'bg-gradient-to-t from-orange-800 to-orange-400', glow: 'shadow-[0_0_15px_rgba(249,115,22,0.4)]' }; break;
+                        case 'EN_RETRASO': config = { bgSolid: 'bg-gradient-to-t from-red-800 to-red-400', glow: 'shadow-[0_0_15px_rgba(239,68,68,0.4)]' }; break;
+                        case 'EN_PAUSA': config = { bgSolid: 'bg-gradient-to-t from-gray-700 to-gray-500', glow: 'shadow-[0_0_15px_rgba(107,114,128,0.4)]' }; break;
+                        case 'CANCELADO': config = { bgSolid: 'bg-gradient-to-t from-rose-900 to-rose-500', glow: 'shadow-[0_0_15px_rgba(244,63,94,0.4)]' }; break;
+                        default: config = { bgSolid: 'bg-gradient-to-t from-gray-600 to-white', glow: 'shadow-[0_0_15px_rgba(255,255,255,0.4)]' }; break;
+                      }
+
+                      const heightPercent = entry.Proyectos === 0 ? 0 : (entry.Proyectos / safeTopValue) * 100;
+
+                      return (
+                        <div key={index} className="relative h-full flex flex-col justify-end items-center group w-full max-w-[40px] md:max-w-[50px] mx-1">
+                          
+                          {/* Floating Interactive Tooltip */}
+                          <div className="absolute bottom-[calc(100%+15px)] opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] px-4 py-3 rounded-xl shadow-2xl z-30 pointer-events-none min-w-[120px] text-center">
+                            <div className="text-3xl font-black text-white">{entry.Proyectos}</div>
+                            <div className="text-[10px] font-bold text-[var(--color-nux-text-muted)] uppercase tracking-widest mt-1">{entry.name}</div>
+                            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[var(--color-nux-bg)] border-b border-r border-[var(--color-nux-border)] rotate-45"></div>
+                          </div>
+
+                          {/* Animated Neon Bar */}
+                          <div 
+                            className={`w-full rounded-t-xl transition-all duration-500 ease-out group-hover:brightness-150 group-hover:scale-x-125 group-hover:-translate-y-2 cursor-pointer relative ${config.bgSolid} ${entry.Proyectos > 0 ? config.glow : ''}`}
+                            style={{ height: entry.Proyectos === 0 ? '4px' : `calc(${heightPercent}% + 4px)` }}
+                          >
+                            {/* Inner highlight for 3D effect */}
+                            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-white/20 to-transparent rounded-t-xl opacity-50 pointer-events-none"></div>
+                          </div>
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Custom Legend */}
+                <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 mt-2 pt-5 border-t border-[var(--color-nux-border)]">
+                  {chartData.map((entry, index) => {
+                    let circleColor;
+                    switch(entry.originalKey) {
+                      case 'PENDIENTE': circleColor = 'bg-gray-400 shadow-[0_0_8px_rgba(156,163,175,0.6)]'; break;
+                      case 'EN_DISENO': circleColor = 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]'; break;
+                      case 'EN_DESARROLLO': circleColor = 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]'; break;
+                      case 'TESTING': circleColor = 'bg-yellow-400 shadow-[0_0_8px_rgba(234,179,8,0.6)]'; break;
+                      case 'ENTREGADO': circleColor = 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'; break;
+                      case 'ENTREGADO_TARDE': circleColor = 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]'; break;
+                      case 'EN_RETRASO': circleColor = 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'; break;
+                      case 'EN_PAUSA': circleColor = 'bg-gray-500 shadow-[0_0_8px_rgba(107,114,128,0.6)]'; break;
+                      case 'CANCELADO': circleColor = 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]'; break;
+                      default: circleColor = 'bg-white'; break;
+                    }
+                    return (
+                      <div key={`legend-${index}`} className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${circleColor}`}></div>
+                        <span className="text-[10px] font-bold text-[var(--color-nux-text-muted)] uppercase tracking-wider">{entry.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              );
+            })()
           ) : (
-            <div className="h-full flex items-center justify-center text-[var(--color-nux-text-muted)]">
-              No hay proyectos entregados en los últimos 30 días.
+            <div className="relative z-10 h-full flex items-center justify-center text-[var(--color-nux-text-muted)]">
+              No hay proyectos registrados.
             </div>
           )}
+          </div>
         </div>
 
         {/* Donut Chart */}
-        <div className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl p-6 shadow-lg h-[450px] flex flex-col">
-          <h3 className="text-lg font-medium mb-2">Tipos de Proyectos Activos</h3>
-          {activeTypesData.length > 0 ? (
-            <div className="flex-1 min-h-0 relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 20 }}>
-                  <Pie
-                    data={activeTypesData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {activeTypesData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#14141e', borderColor: '#27273a', borderRadius: '8px' }}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                  <Legend 
-                    layout="horizontal" 
-                    verticalAlign="bottom" 
-                    align="center"
-                    wrapperStyle={{ paddingTop: '20px' }}
-                    iconType="circle" 
-                    iconSize={8}
-                    formatter={(value) => <span className="text-xs font-medium text-[var(--color-nux-text-muted)] ml-1">{value}</span>}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-[var(--color-nux-text-muted)]">
-              No hay proyectos activos.
-            </div>
-          )}
+        {/* Donut Chart */}
+        <div className="bg-gradient-to-br from-[#050508] via-[#12121a] to-[#050508] animate-gradient-shift border border-[var(--color-nux-border)] rounded-xl p-6 shadow-2xl h-[450px] flex flex-col relative overflow-hidden">
+          <ParticlesBackground />
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
+            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[var(--color-nux-primary)]/10 rounded-full blur-[80px] animate-slow-spin"></div>
+            <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] bg-purple-900/10 rounded-full blur-[60px] animate-float-delayed"></div>
+          </div>
+
+          <div className="relative z-10 flex flex-col h-full">
+            <h3 className="text-lg font-medium mb-2 text-white/90 drop-shadow-md">Tipos de Proyectos</h3>
+            {activeTypesData.length > 0 ? (
+              <div className="flex-1 flex flex-col">
+                {/* Horizontal Progress Bars */}
+                <div className="flex-1 flex flex-col justify-center space-y-6 mt-2 w-full px-2 lg:px-6 relative z-10">
+                  {activeTypesData.sort((a,b) => b.value - a.value).map((entry, index) => {
+                    const percent = totalTypes > 0 ? (entry.value / totalTypes) * 100 : 0;
+                    const color = DONUT_COLORS[index % DONUT_COLORS.length];
+                    
+                    return (
+                      <div key={index} className="w-full group cursor-pointer">
+                        <div className="flex justify-between items-end mb-2">
+                          <span className="text-xs font-bold text-[var(--color-nux-text-muted)] uppercase tracking-widest group-hover:text-white transition-colors duration-300">
+                            {entry.name}
+                          </span>
+                          <span className="text-lg font-black text-white drop-shadow-md">
+                            {entry.value}
+                          </span>
+                        </div>
+                        {/* Track */}
+                        <div className="w-full h-3 bg-[#0f0f17] rounded-full border border-[var(--color-nux-border)] shadow-inner relative overflow-hidden">
+                          {/* Progress */}
+                          <div 
+                            className={`h-full rounded-full transition-all duration-1000 ease-out ${color.class} relative group-hover:brightness-150`}
+                            style={{ 
+                              width: `${percent}%`,
+                              filter: `drop-shadow(0 0 8px ${color.shadow})`
+                            }}
+                          >
+                            {/* Inner highlight for 3D effect */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent rounded-full opacity-50 pointer-events-none"></div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-[var(--color-nux-text-muted)]">
+                No hay proyectos activos.
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

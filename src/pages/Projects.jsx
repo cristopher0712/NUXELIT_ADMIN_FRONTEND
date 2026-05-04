@@ -44,156 +44,8 @@ const Projects = () => {
 
       const res = await api.get('/projects');
       
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      const twoDaysAgo = new Date(today);
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
-      const fiveDaysAgo = new Date(today);
-      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-
-      const mockLateProjects = [
-        {
-          _id: 'mock1',
-          client: { name: 'Alvaro Sanchez', company: 'E-commerce Zapatería' },
-          serviceType: 'E-commerce',
-          status: 'EN_DESARROLLO',
-          expectedDeliveryDate: yesterday.toISOString(),
-          startDate: '2026-03-01T10:00:00Z',
-          finances: { agreedPrice: 2500, pendingAmount: 1200 },
-          developers: []
-        },
-        {
-          _id: 'mock2',
-          client: { name: 'Maria Rodriguez', company: 'Mobile App Fitness' },
-          serviceType: 'App Movil',
-          status: 'TESTING',
-          expectedDeliveryDate: twoDaysAgo.toISOString(),
-          startDate: '2026-02-15T10:00:00Z',
-          finances: { agreedPrice: 4500, pendingAmount: 2000 },
-          developers: []
-        },
-        {
-          _id: 'mock3',
-          client: { name: 'Carlos Gomez', company: 'Software Gestión Inventario' },
-          serviceType: 'Software',
-          status: 'EN_DISENO',
-          expectedDeliveryDate: fiveDaysAgo.toISOString(),
-          startDate: '2026-02-20T10:00:00Z',
-          finances: { agreedPrice: 3200, pendingAmount: 3200 },
-          developers: []
-        }
-      ];
-
-      const mockOnTimeProjects = [
-        {
-          _id: 'mock4',
-          client: { name: 'Lucia Mendez', company: 'Spa Relax' },
-          serviceType: 'Landing Page',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-04-15T10:00:00Z',
-          actualDeliveryDate: '2026-04-14T10:00:00Z',
-          startDate: '2026-04-01T10:00:00Z',
-          finances: { agreedPrice: 800, pendingAmount: 0 },
-          developers: []
-        },
-        {
-          _id: 'mock5',
-          client: { name: 'Roberto Diaz', company: 'Logística Express' },
-          serviceType: 'Software',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-03-30T10:00:00Z',
-          actualDeliveryDate: '2026-03-28T10:00:00Z',
-          startDate: '2026-03-01T10:00:00Z',
-          finances: { agreedPrice: 5200, pendingAmount: 0 },
-          developers: []
-        },
-        {
-          _id: 'mock6',
-          client: { name: 'Elena Torres', company: 'Eco Store' },
-          serviceType: 'E-commerce',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-04-20T10:00:00Z',
-          actualDeliveryDate: '2026-04-20T10:00:00Z',
-          startDate: '2026-04-05T10:00:00Z',
-          finances: { agreedPrice: 2800, pendingAmount: 500 },
-          developers: []
-        },
-        {
-          _id: 'mock7',
-          client: { name: 'Julian Ruiz', company: 'Constructora JR' },
-          serviceType: 'Otro',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-04-10T10:00:00Z',
-          actualDeliveryDate: '2026-04-08T10:00:00Z',
-          startDate: '2026-03-25T10:00:00Z',
-          finances: { agreedPrice: 1500, pendingAmount: 0 },
-          developers: []
-        },
-        {
-          _id: 'mock8',
-          client: { name: 'Sofia Castro', company: 'Moda Chic' },
-          serviceType: 'Landing Page',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-04-25T10:00:00Z',
-          actualDeliveryDate: '2026-04-22T10:00:00Z',
-          startDate: '2026-04-10T10:00:00Z',
-          finances: { agreedPrice: 950, pendingAmount: 0 },
-          developers: []
-        },
-        {
-          _id: 'mock9',
-          client: { name: 'Andrés Pardo', company: 'Tech Solutions' },
-          serviceType: 'App Movil',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-03-20T10:00:00Z',
-          actualDeliveryDate: '2026-03-15T10:00:00Z',
-          startDate: '2026-02-01T10:00:00Z',
-          finances: { agreedPrice: 8500, pendingAmount: 0 },
-          developers: []
-        },
-        {
-          _id: 'mock10',
-          client: { name: 'Valentina Vega', company: 'Agencia Creativa' },
-          serviceType: 'E-commerce',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-04-05T10:00:00Z',
-          actualDeliveryDate: '2026-04-05T10:00:00Z',
-          startDate: '2026-03-10T10:00:00Z',
-          finances: { agreedPrice: 3100, pendingAmount: 0 },
-          developers: []
-        }
-      ];
-
-      const mockLateDeliveredProjects = [
-        {
-          _id: 'mock11',
-          client: { name: 'Pedro Jimenez', company: 'Bar La Esquina' },
-          serviceType: 'Landing Page',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-04-10T10:00:00Z',
-          actualDeliveryDate: '2026-04-13T10:00:00Z',
-          startDate: '2026-04-01T10:00:00Z',
-          finances: { agreedPrice: 900, pendingAmount: 0 },
-          developers: []
-        },
-        {
-          _id: 'mock12',
-          client: { name: 'Laura Gil', company: 'Consultoría LG' },
-          serviceType: 'Software',
-          status: 'ENTREGADO',
-          expectedDeliveryDate: '2026-03-20T10:00:00Z',
-          actualDeliveryDate: '2026-03-25T10:00:00Z',
-          startDate: '2026-03-01T10:00:00Z',
-          finances: { agreedPrice: 4800, pendingAmount: 0 },
-          developers: []
-        }
-      ];
-
-      // Assign random developers to all projects (real and mock) that don't have them
-      const allProjectsList = [...res.data.data, ...mockLateProjects, ...mockOnTimeProjects, ...mockLateDeliveredProjects].map(p => {
+      // Assign random developers to real projects that don't have them
+      const allProjectsList = res.data.data.map(p => {
         if (!p.developers || p.developers.length === 0) {
           const numDevs = Math.floor(Math.random() * 2) + 1; // 1 to 2 devs
           const shuffled = [...devs].sort(() => 0.5 - Math.random());
@@ -212,6 +64,7 @@ const Projects = () => {
 
   const getStatusColor = (status) => {
     switch(status) {
+      case 'PENDIENTE': return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
       case 'ENTREGADO': return 'bg-green-500/10 text-green-400 border-green-500/20';
       case 'EN_DESARROLLO': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'TESTING': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
@@ -655,6 +508,7 @@ const Projects = () => {
           {showAdvanced && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-5 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl animate-dribbble-pop origin-top select-none relative z-[60]">
               <FilterDropdown label="Estado" value={filterStatus} placeholder="Todos los estados" onChange={setFilterStatus} options={[
+                  { value: 'PENDIENTE', label: 'Pendiente' },
                   { value: 'EN_DISENO', label: 'En Diseño' },
                   { value: 'EN_DESARROLLO', label: 'En Desarrollo' },
                   { value: 'TESTING', label: 'Testing' },

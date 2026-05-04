@@ -27,9 +27,9 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--color-nux-bg)] text-[var(--color-nux-text)] font-sans">
+    <div className="flex min-h-screen bg-[var(--color-nux-bg)] text-[var(--color-nux-text)] font-sans">
       {/* Sidebar - Ultra Minimalist Style (Icons Only) */}
-      <aside className="w-20 bg-[var(--color-nux-bg)] border-r border-[var(--color-nux-border)] flex flex-col items-center py-8 z-50 select-none">
+      <aside className="fixed top-0 left-0 h-screen w-20 bg-[var(--color-nux-bg)] border-r border-[var(--color-nux-border)] flex flex-col items-center py-8 z-50 select-none">
         {/* Top User Profile - Sober & Minimalist */}
         <div className="mb-12 relative group cursor-pointer flex flex-col items-center gap-2">
           <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center font-medium text-xl text-[var(--color-nux-text-muted)] transition-all duration-500 group-hover:bg-white/10 group-hover:text-white relative">
@@ -74,8 +74,8 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-[var(--color-nux-bg)]">
-        <header className="h-20 flex items-center justify-between px-10">
+      <main className="ml-20 flex-1 flex flex-col min-h-screen bg-[var(--color-nux-bg)]">
+        <header className="sticky top-0 z-40 h-20 flex items-center justify-between px-10 bg-[var(--color-nux-bg)]/80 backdrop-blur-xl border-b border-white/5 shadow-sm">
           <div className="flex items-center gap-6">
             <h2 className="text-2xl font-bold text-white uppercase tracking-normal">
               {getPageTitle()}
@@ -94,7 +94,7 @@ const AdminLayout = () => {
           </div>
         </header>
         
-        <div className="flex-1 overflow-y-auto px-10 pb-10">
+        <div className="flex-1 px-10 pb-10 pt-6">
           <Outlet />
         </div>
       </main>
