@@ -88,3 +88,28 @@ body {
   transform: scale(1.2);
   filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.8));
 }
+@keyframes dribbble-pop {
+  0% { 
+    opacity: 0; 
+    transform: scale(0.95) translateY(-10px); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+.animate-dribbble-pop { 
+  animation: dribbble-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; 
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-nux-border);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-nux-primary);
+}
