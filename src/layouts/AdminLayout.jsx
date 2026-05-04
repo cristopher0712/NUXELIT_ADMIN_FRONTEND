@@ -1,12 +1,13 @@
 import React from 'react';
-import { Outlet, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Users, Settings, LogOut, Code2 } from 'lucide-react';
+import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, FolderKanban, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const AdminLayout = () => {
   const { user, logout, loading } = useAuth();
+  const location = useLocation();
 
-  if (loading) return <div className="h-screen flex items-center justify-center text-nux-text">Cargando...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center text-[var(--color-nux-text)]">Cargando...</div>;
   if (!user) return <Navigate to="/login" />;
 
   const handleLogout = () => {
@@ -14,64 +15,86 @@ const AdminLayout = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: 'Proyectos', path: '/projects', icon: <FolderKanban size={20} /> },
-    { name: 'Desarrolladores', path: '/developers', icon: <Code2 size={20} /> },
-    { name: 'Usuarios', path: '/users', icon: <Users size={20} /> },
-    { name: 'Configuración', path: '/settings', icon: <Settings size={20} /> },
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={24} /> },
+    { name: 'Proyectos', path: '/projects', icon: <FolderKanban size={24} /> },
+    { name: 'Configuración', path: '/settings', icon: <Settings size={24} /> },
   ];
+
+  // Map path to title
+  const getPageTitle = () => {
+    const currentItem = navItems.find(item => item.path === location.pathname);
+    return currentItem ? currentItem.name : 'NUXELIT';
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-nux-bg)] text-[var(--color-nux-text)] font-sans">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[var(--color-nux-surface)] border-r border-[var(--color-nux-border)] flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-[var(--color-nux-border)]">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-[var(--color-nux-primary)] to-[var(--color-nux-accent)] bg-clip-text text-transparent">
-            NUXELIT ADMIN
-          </h1>
+      {/* Sidebar - Ultra Minimalist Style (Icons Only) */}
+      <aside className="w-20 bg-[var(--color-nux-bg)] border-r border-[var(--color-nux-border)] flex flex-col items-center py-8 z-50 select-none">
+        {/* Top User Profile - Sober & Minimalist */}
+        <div className="mb-12 relative group cursor-pointer flex flex-col items-center gap-2">
+          <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center font-medium text-xl text-[var(--color-nux-text-muted)] transition-all duration-500 group-hover:bg-white/10 group-hover:text-white relative">
+            {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
+            {/* Discreet Status Dot inside the box container for stability */}
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-[var(--color-nux-bg)] rounded-full"></div>
+          </div>
+          {/* Brand Name - Ultra Smooth Transition */}
+          <span className="text-[9px] font-black tracking-[0.25em] text-[var(--color-nux-text-muted)] opacity-30 group-hover:opacity-100 group-hover:text-[var(--color-nux-primary)] transition-all duration-700 uppercase">
+            NUXELIT
+          </span>
         </div>
 
-        <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+        {/* Navigation Icons Only */}
+        <nav className="flex-1 flex flex-col gap-10">
           {navItems.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
+                `flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 hover:animate-dribbble-pop ${
                   isActive 
-                    ? 'bg-[var(--color-nux-primary)] text-white' 
-                    : 'text-[var(--color-nux-text-muted)] hover:bg-[var(--color-nux-surface-hover)] hover:text-white'
+                    ? 'bg-[var(--color-nux-primary)] text-white shadow-[0_0_20px_rgba(124,58,237,0.4)]' 
+                    : 'text-[var(--color-nux-text-muted)] hover:text-white hover:bg-[var(--color-nux-surface-hover)]'
                 }`
               }
             >
               {item.icon}
-              <span className="font-medium">{item.name}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-[var(--color-nux-border)]">
+        {/* Bottom Logout Only */}
+        <div className="mt-auto">
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-3 w-full rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+            className="flex items-center justify-center w-12 h-12 rounded-full text-red-400/70 hover:text-red-400 hover:bg-red-400/10 transition-all duration-300 hover:animate-dribbble-pop"
           >
-            <LogOut size={20} />
-            <span className="font-medium">Cerrar Sesión</span>
+            <LogOut size={24} />
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 bg-[var(--color-nux-surface)] border-b border-[var(--color-nux-border)] flex items-center justify-between px-8">
-          <h2 className="text-lg font-medium text-[var(--color-nux-text-muted)]">Panel de Control</h2>
+      <main className="flex-1 flex flex-col overflow-hidden bg-[var(--color-nux-bg)]">
+        <header className="h-20 flex items-center justify-between px-10">
+          <div className="flex items-center gap-6">
+            <h2 className="text-2xl font-bold text-white uppercase tracking-normal">
+              {getPageTitle()}
+            </h2>
+            <div className="h-8 w-[1px] bg-[var(--color-nux-border)] mx-2 self-center"></div>
+            <div className="text-sm font-medium text-[var(--color-nux-text-muted)] flex items-center h-full pt-1.5">
+              Welcome back, <span className="text-white font-bold ml-1.5">{user.name}</span>
+            </div>
+          </div>
+          
           <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-[var(--color-nux-primary)] flex items-center justify-center font-bold text-white shadow-lg shadow-purple-500/20">
-              {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
+            <div className="flex items-center gap-2 px-4 py-2 bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-full text-[10px] font-bold tracking-widest text-[var(--color-nux-text-muted)] uppercase">
+              <span className="w-2 h-2 rounded-full bg-[var(--color-nux-primary)] animate-pulse shadow-[0_0_8px_var(--color-nux-primary)]"></span>
+              Admin Portal
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-8">
+        
+        <div className="flex-1 overflow-y-auto px-10 pb-10">
           <Outlet />
         </div>
       </main>
@@ -80,3 +103,7 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
+
+
+
+

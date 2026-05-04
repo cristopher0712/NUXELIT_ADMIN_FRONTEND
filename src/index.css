@@ -36,22 +36,35 @@ body {
   background: var(--color-nux-border);
 }
 
-/* Custom Animations */
+/* Custom Animations - Optimized for Sharpness */
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
-  100% { transform: translateY(0px); }
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -6px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
 }
 
 @keyframes float-delayed {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(5px); }
-  100% { transform: translateY(0px); }
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, 6px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 15px var(--color-nux-primary)); transform: scale(1); }
-  50% { opacity: 0.8; filter: drop-shadow(0 0 30px var(--color-nux-accent)); transform: scale(1.05); }
+  0%, 100% { 
+    opacity: 1; 
+    filter: drop-shadow(0 0 10px var(--color-nux-primary)); 
+    transform: translate3d(0, 0, 0) scale(1); 
+  }
+  50% { 
+    opacity: 0.9; 
+    filter: drop-shadow(0 0 25px var(--color-nux-accent)); 
+    transform: translate3d(0, 0, 0) scale(1.02); 
+  }
+}
+
+@keyframes text-glow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.8)); }
+  50% { filter: drop-shadow(0 0 15px rgba(6, 182, 212, 1)); }
 }
 
 @keyframes slow-spin {
@@ -64,9 +77,26 @@ body {
   50% { opacity: 0.7; transform: scale(0.9); }
 }
 
-.animate-float { animation: float 6s ease-in-out infinite; }
-.animate-float-delayed { animation: float-delayed 8s ease-in-out infinite; }
-.animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+.animate-float { 
+  animation: float 6s ease-in-out infinite; 
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+}
+
+.animate-float-delayed { 
+  animation: float-delayed 8s ease-in-out infinite; 
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+}
+
+.animate-pulse-glow { 
+  animation: pulse-glow 8s ease-in-out infinite; 
+  backface-visibility: hidden;
+  will-change: transform, filter;
+}
+
 .animate-slow-spin { animation: slow-spin 20s linear infinite; }
 
 /* Fancy Legend Icons */

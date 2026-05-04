@@ -52,38 +52,50 @@ const Dashboard = () => {
         {/* Decorative background blur */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[var(--color-nux-primary)]/20 rounded-full blur-3xl animate-slow-spin"></div>
         
-        <div className="z-10">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-[var(--color-nux-text-muted)] bg-clip-text text-transparent">Dashboard</h1>
-          <p className="text-[var(--color-nux-text-muted)] mt-2">Resumen general de la agencia</p>
+        <div className="z-10 relative group">
+          {/* Softened title glow/aura */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-20 bg-[var(--color-nux-primary)]/20 blur-3xl rounded-full pointer-events-none animate-pulse-soft"></div>
+          
+          <div className="relative">
+            <h1 className="text-4xl font-black bg-gradient-to-r from-white via-white to-[var(--color-nux-text-muted)] bg-clip-text text-transparent tracking-tight">
+              Dashboard
+            </h1>
+            <p className="text-[var(--color-nux-text-muted)] mt-2 font-medium tracking-wide flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-nux-primary)] animate-pulse shadow-[0_0_8px_var(--color-nux-primary)]"></span>
+              Resumen general de la agencia
+            </p>
+          </div>
         </div>
 
         {/* Animated Logo Widget */}
         <div className="relative w-full max-w-md h-52 flex items-center justify-center z-10 mt-8 md:mt-0">
-          {/* Developer 1 */}
-          <div className="absolute left-2 top-4 animate-float bg-[var(--color-nux-bg)]/80 backdrop-blur-md border border-[var(--color-nux-primary)]/50 px-4 py-2 rounded-xl text-sm font-medium shadow-[0_0_15px_rgba(124,58,237,0.3)]">
-            Cristopher Acevedo
-          </div>
-          
-          {/* Developer 2 */}
-          <div className="absolute right-2 top-8 animate-float-delayed bg-[var(--color-nux-bg)]/80 backdrop-blur-md border border-[var(--color-nux-accent)]/50 px-4 py-2 rounded-xl text-sm font-medium shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+          {/* Developer 1 - Santiago (Purple) - Purple Glow */}
+          <div className="absolute left-2 top-6 animate-float bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/50 px-3 py-1.5 rounded-xl text-sm font-medium shadow-[0_0_15px_rgba(124,58,237,0.3)] antialiased tracking-wide">
             Santiago Castilla
           </div>
+          
+          {/* Developer 2 - Cristopher (Cyan) - Cyan Glow */}
+          <div className="absolute right-2 top-10 animate-float-delayed bg-[var(--color-nux-bg)] border border-[var(--color-nux-accent)]/50 px-3 py-1.5 rounded-xl text-sm font-bold shadow-[0_0_20px_rgba(6,182,212,0.4)] text-white antialiased tracking-wide">
+            Cristopher Acevedo
+          </div>
 
-          {/* Developer 3 */}
-          <div className="absolute left-1/2 bottom-2 -translate-x-1/2 animate-float bg-[var(--color-nux-bg)]/80 backdrop-blur-md border border-pink-500/50 px-4 py-2 rounded-xl text-sm font-medium shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+          {/* Developer 3 - Richard (Pink) - Pink Glow */}
+          <div className="absolute left-1/2 bottom-[-15px] -translate-x-1/2 animate-float bg-[var(--color-nux-bg)] border border-pink-500/50 px-3 py-1.5 rounded-xl text-sm font-medium shadow-[0_0_15px_rgba(236,72,153,0.3)] antialiased tracking-wide">
             Richard Guzman
           </div>
 
-          {/* Center Logo */}
-          <div className="flex flex-col items-center justify-center animate-pulse-glow">
-            <div className="relative flex items-center justify-center">
+          {/* Center Logo - Synchronized Glow */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="relative flex items-center justify-center animate-pulse-glow">
               <Hexagon size={48} className="text-[var(--color-nux-primary)] animate-slow-spin absolute" />
               <Hexagon size={48} className="text-[var(--color-nux-accent)]" />
               <div className="absolute w-4 h-4 bg-white rounded-full shadow-[0_0_10px_white]"></div>
             </div>
-            <span className="mt-3 font-bold tracking-widest text-lg bg-gradient-to-r from-[var(--color-nux-primary)] to-[var(--color-nux-accent)] bg-clip-text text-transparent">
-              NUXELIT
-            </span>
+            <div className="animate-text-glow mt-3">
+              <span className="font-bold tracking-widest text-lg bg-gradient-to-r from-[var(--color-nux-primary)] to-[var(--color-nux-accent)] bg-clip-text text-transparent antialiased">
+                NUXELIT
+              </span>
+            </div>
           </div>
         </div>
       </div>

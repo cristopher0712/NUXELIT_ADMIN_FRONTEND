@@ -14,6 +14,7 @@ const Projects = () => {
   const [filterType, setFilterType] = useState('');
   const [filterPrice, setFilterPrice] = useState('');
   const [filterMonth, setFilterMonth] = useState('');
+  const [filterLate, setFilterLate] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [showDevDropdown, setShowDevDropdown] = useState(false);
@@ -22,7 +23,6 @@ const Projects = () => {
 
   useEffect(() => {
     fetchProjects();
-    fetchDevelopers();
   }, []);
 
   const fetchDevelopers = async () => {
@@ -36,8 +36,173 @@ const Projects = () => {
 
   const fetchProjects = async () => {
     try {
+      setLoading(true);
+      // Fetch developers first to have them available for assignment
+      const developersRes = await api.get('/developers');
+      const devs = developersRes.data.data;
+      setDevelopersList(devs);
+
       const res = await api.get('/projects');
-      setProjects(res.data.data);
+      
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const twoDaysAgo = new Date(today);
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+      const fiveDaysAgo = new Date(today);
+      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+      const mockLateProjects = [
+        {
+          _id: 'mock1',
+          client: { name: 'Alvaro Sanchez', company: 'E-commerce Zapatería' },
+          serviceType: 'E-commerce',
+          status: 'EN_DESARROLLO',
+          expectedDeliveryDate: yesterday.toISOString(),
+          startDate: '2026-03-01T10:00:00Z',
+          finances: { agreedPrice: 2500, pendingAmount: 1200 },
+          developers: []
+        },
+        {
+          _id: 'mock2',
+          client: { name: 'Maria Rodriguez', company: 'Mobile App Fitness' },
+          serviceType: 'App Movil',
+          status: 'TESTING',
+          expectedDeliveryDate: twoDaysAgo.toISOString(),
+          startDate: '2026-02-15T10:00:00Z',
+          finances: { agreedPrice: 4500, pendingAmount: 2000 },
+          developers: []
+        },
+        {
+          _id: 'mock3',
+          client: { name: 'Carlos Gomez', company: 'Software Gestión Inventario' },
+          serviceType: 'Software',
+          status: 'EN_DISENO',
+          expectedDeliveryDate: fiveDaysAgo.toISOString(),
+          startDate: '2026-02-20T10:00:00Z',
+          finances: { agreedPrice: 3200, pendingAmount: 3200 },
+          developers: []
+        }
+      ];
+
+      const mockOnTimeProjects = [
+        {
+          _id: 'mock4',
+          client: { name: 'Lucia Mendez', company: 'Spa Relax' },
+          serviceType: 'Landing Page',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-04-15T10:00:00Z',
+          actualDeliveryDate: '2026-04-14T10:00:00Z',
+          startDate: '2026-04-01T10:00:00Z',
+          finances: { agreedPrice: 800, pendingAmount: 0 },
+          developers: []
+        },
+        {
+          _id: 'mock5',
+          client: { name: 'Roberto Diaz', company: 'Logística Express' },
+          serviceType: 'Software',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-03-30T10:00:00Z',
+          actualDeliveryDate: '2026-03-28T10:00:00Z',
+          startDate: '2026-03-01T10:00:00Z',
+          finances: { agreedPrice: 5200, pendingAmount: 0 },
+          developers: []
+        },
+        {
+          _id: 'mock6',
+          client: { name: 'Elena Torres', company: 'Eco Store' },
+          serviceType: 'E-commerce',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-04-20T10:00:00Z',
+          actualDeliveryDate: '2026-04-20T10:00:00Z',
+          startDate: '2026-04-05T10:00:00Z',
+          finances: { agreedPrice: 2800, pendingAmount: 500 },
+          developers: []
+        },
+        {
+          _id: 'mock7',
+          client: { name: 'Julian Ruiz', company: 'Constructora JR' },
+          serviceType: 'Otro',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-04-10T10:00:00Z',
+          actualDeliveryDate: '2026-04-08T10:00:00Z',
+          startDate: '2026-03-25T10:00:00Z',
+          finances: { agreedPrice: 1500, pendingAmount: 0 },
+          developers: []
+        },
+        {
+          _id: 'mock8',
+          client: { name: 'Sofia Castro', company: 'Moda Chic' },
+          serviceType: 'Landing Page',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-04-25T10:00:00Z',
+          actualDeliveryDate: '2026-04-22T10:00:00Z',
+          startDate: '2026-04-10T10:00:00Z',
+          finances: { agreedPrice: 950, pendingAmount: 0 },
+          developers: []
+        },
+        {
+          _id: 'mock9',
+          client: { name: 'Andrés Pardo', company: 'Tech Solutions' },
+          serviceType: 'App Movil',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-03-20T10:00:00Z',
+          actualDeliveryDate: '2026-03-15T10:00:00Z',
+          startDate: '2026-02-01T10:00:00Z',
+          finances: { agreedPrice: 8500, pendingAmount: 0 },
+          developers: []
+        },
+        {
+          _id: 'mock10',
+          client: { name: 'Valentina Vega', company: 'Agencia Creativa' },
+          serviceType: 'E-commerce',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-04-05T10:00:00Z',
+          actualDeliveryDate: '2026-04-05T10:00:00Z',
+          startDate: '2026-03-10T10:00:00Z',
+          finances: { agreedPrice: 3100, pendingAmount: 0 },
+          developers: []
+        }
+      ];
+
+      const mockLateDeliveredProjects = [
+        {
+          _id: 'mock11',
+          client: { name: 'Pedro Jimenez', company: 'Bar La Esquina' },
+          serviceType: 'Landing Page',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-04-10T10:00:00Z',
+          actualDeliveryDate: '2026-04-13T10:00:00Z',
+          startDate: '2026-04-01T10:00:00Z',
+          finances: { agreedPrice: 900, pendingAmount: 0 },
+          developers: []
+        },
+        {
+          _id: 'mock12',
+          client: { name: 'Laura Gil', company: 'Consultoría LG' },
+          serviceType: 'Software',
+          status: 'ENTREGADO',
+          expectedDeliveryDate: '2026-03-20T10:00:00Z',
+          actualDeliveryDate: '2026-03-25T10:00:00Z',
+          startDate: '2026-03-01T10:00:00Z',
+          finances: { agreedPrice: 4800, pendingAmount: 0 },
+          developers: []
+        }
+      ];
+
+      // Assign random developers to all projects (real and mock) that don't have them
+      const allProjectsList = [...res.data.data, ...mockLateProjects, ...mockOnTimeProjects, ...mockLateDeliveredProjects].map(p => {
+        if (!p.developers || p.developers.length === 0) {
+          const numDevs = Math.floor(Math.random() * 2) + 1; // 1 to 2 devs
+          const shuffled = [...devs].sort(() => 0.5 - Math.random());
+          p.developers = shuffled.slice(0, numDevs);
+        }
+        return p;
+      });
+
+      setProjects(allProjectsList);
     } catch (err) {
       console.error('Error fetching projects:', err.response || err);
     } finally {
@@ -70,7 +235,7 @@ const Projects = () => {
     const payments = project.finances?.payments || [];
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
           <div className="p-6 border-b border-[var(--color-nux-border)] flex justify-between items-center bg-gradient-to-r from-[var(--color-nux-surface)] to-[var(--color-nux-bg)]">
             <div>
@@ -111,7 +276,8 @@ const Projects = () => {
                         <th className="px-4 py-3 font-medium">Fecha</th>
                         <th className="px-4 py-3 font-medium">Monto</th>
                         <th className="px-4 py-3 font-medium">Método</th>
-                        <th className="px-4 py-3 font-medium text-right">Recibo</th>
+                        <th className="px-4 py-3 font-medium">Recibo</th>
+                        <th className="px-4 py-3 font-medium text-center">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--color-nux-border)]">
@@ -124,7 +290,7 @@ const Projects = () => {
                               {payment.method}
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-right">
+                          <td className="px-4 py-4">
                             {payment.receiptUrl ? (
                               <a 
                                 href={payment.receiptUrl} 
@@ -137,6 +303,17 @@ const Projects = () => {
                             ) : (
                               <span className="text-[var(--color-nux-text-muted)] text-xs italic">Sin recibo</span>
                             )}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <div className="w-10 mx-auto flex justify-center">
+                              {idx === payments.length - 1 ? (
+                                <button className="p-2 text-red-400/40 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer">
+                                  <Trash2 size={15} />
+                                </button>
+                              ) : (
+                                <div className="w-8"></div>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -165,16 +342,18 @@ const Projects = () => {
     const selectedOption = options.find(o => o.value === value);
 
     return (
-      <div className="space-y-1.5 relative group">
+      <div className="space-y-1.5 relative group select-none">
         <label className="text-[10px] font-bold text-[var(--color-nux-text-muted)] uppercase tracking-widest ml-1">{label}</label>
         <div className="relative">
           <div 
             onClick={() => setIsOpen(!isOpen)}
-            className={`w-full bg-[var(--color-nux-bg)] border rounded-lg px-4 h-10 text-sm flex items-center justify-between cursor-pointer transition-all ${
-              isOpen ? 'border-[var(--color-nux-primary)] ring-2 ring-[var(--color-nux-primary)]/20' : 'border-[var(--color-nux-border)] hover:border-[var(--color-nux-primary)]'
+            className={`w-full bg-[var(--color-nux-bg)] border rounded-lg px-4 h-10 text-sm flex items-center justify-between cursor-pointer transition-all duration-200 ${
+              isOpen || value 
+              ? 'border-[var(--color-nux-primary)] bg-[var(--color-nux-primary)]/10 text-white shadow-[0_0_15px_rgba(124,58,237,0.2)] ring-1 ring-[var(--color-nux-primary)]/30' 
+              : 'border-[var(--color-nux-border)] text-[var(--color-nux-text-muted)] hover:border-[var(--color-nux-primary)] hover:bg-[var(--color-nux-primary)]/10 hover:text-white'
             }`}
           >
-            <span className={`truncate ${value ? 'text-white font-medium' : 'text-[var(--color-nux-text-muted)]'}`}>
+            <span className={`truncate ${value || isOpen ? 'text-white font-medium' : 'text-[var(--color-nux-text-muted)]'}`}>
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             <ChevronDown size={14} className={`text-[var(--color-nux-text-muted)] transition-transform duration-300 ${isOpen ? 'rotate-180 text-[var(--color-nux-primary)]' : ''}`} />
@@ -183,8 +362,8 @@ const Projects = () => {
           {isOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
-              <div className="absolute top-full left-0 mt-2 w-full bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-20 p-2 animate-dribbble-pop origin-top">
-                <div className="max-h-60 overflow-y-auto space-y-1 p-1 custom-scrollbar">
+              <div className="absolute top-full left-0 mt-2 w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-[100] p-2 animate-dribbble-pop origin-top">
+                <div className="max-h-60 overflow-y-auto space-y-1 p-1 custom-scrollbar bg-[var(--color-nux-bg)] rounded-lg">
                   <div 
                     onClick={() => { onChange(''); setIsOpen(false); }}
                     className="p-2.5 hover:bg-[var(--color-nux-bg)] rounded-lg cursor-pointer text-sm text-[var(--color-nux-text-muted)] transition-colors hover:text-white"
@@ -214,21 +393,11 @@ const Projects = () => {
   };
 
   const filteredAndSortedProjects = projects.filter(p => {
-    // Client name search
     const matchesSearch = p.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          p.client?.company?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Developer multi-select (at least one matches)
-    const matchesDevs = selectedDevs.length === 0 || 
-                       p.developers?.some(dev => selectedDevs.includes(dev._id));
-    
-    // Status filter
+    const matchesDevs = selectedDevs.length === 0 || p.developers?.some(dev => selectedDevs.includes(dev._id));
     const matchesStatus = !filterStatus || p.status === filterStatus;
-    
-    // Type filter
     const matchesType = !filterType || p.serviceType === filterType;
-    
-    // Price range filter
     let matchesPrice = true;
     if (filterPrice) {
       const price = p.finances?.agreedPrice || 0;
@@ -237,24 +406,40 @@ const Projects = () => {
       else if (filterPrice === '3000-7000') matchesPrice = price >= 3000 && price <= 7000;
       else if (filterPrice === '>7000') matchesPrice = price > 7000;
     }
-    
-    // Month filter (based on delivery date)
     let matchesMonth = true;
     if (filterMonth) {
       const date = p.status === 'ENTREGADO' ? p.actualDeliveryDate : p.expectedDeliveryDate;
       if (date) {
-        const month = new Date(date).getMonth(); // 0-11
+        const month = new Date(date).getMonth();
         matchesMonth = month === parseInt(filterMonth);
       } else {
         matchesMonth = false;
       }
     }
-    
-    return matchesSearch && matchesDevs && matchesStatus && matchesType && matchesPrice && matchesMonth;
+
+    let matchesLate = true;
+    if (filterLate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const deliveryDate = new Date(p.expectedDeliveryDate);
+      deliveryDate.setHours(0, 0, 0, 0);
+      
+      const isActiveLate = p.status !== 'ENTREGADO' && deliveryDate < today;
+      
+      const actualDate = p.actualDeliveryDate ? new Date(p.actualDeliveryDate) : null;
+      if (actualDate) actualDate.setHours(0, 0, 0, 0);
+      const isPastLate = p.status === 'ENTREGADO' && actualDate && actualDate > deliveryDate;
+
+      if (filterLate === 'ACTIVE_LATE') matchesLate = isActiveLate;
+      else if (filterLate === 'PAST_LATE') matchesLate = isPastLate;
+      else if (filterLate === 'ON_TIME') matchesLate = !isActiveLate && !isPastLate;
+    }
+
+    return matchesSearch && matchesDevs && matchesStatus && matchesType && matchesPrice && matchesMonth && matchesLate;
   }).sort((a, b) => {
     const { key, order } = sortConfig;
     let comparison = 0;
-
     if (key === 'date') {
       const dateA = a.status === 'ENTREGADO' ? new Date(a.actualDeliveryDate || 0) : new Date(a.expectedDeliveryDate || 0);
       const dateB = b.status === 'ENTREGADO' ? new Date(b.actualDeliveryDate || 0) : new Date(b.expectedDeliveryDate || 0);
@@ -264,7 +449,6 @@ const Projects = () => {
     } else if (key === 'pending') {
       comparison = (a.finances?.pendingAmount || 0) - (b.finances?.pendingAmount || 0);
     }
-
     return order === 'asc' ? comparison : -comparison;
   });
 
@@ -285,35 +469,39 @@ const Projects = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Proyectos</h1>
-          <p className="text-[var(--color-nux-text-muted)] mt-1">Gestión de clientes y entregas</p>
+          <p className="text-[var(--color-nux-text-muted)] font-medium">Gestión de clientes y entregas de proyectos</p>
         </div>
-        <button className="flex items-center gap-2 bg-[var(--color-nux-primary)] hover:bg-[var(--color-nux-primary-hover)] px-4 py-2 rounded-lg font-medium transition-colors">
+        <button className="flex items-center gap-2 bg-[var(--color-nux-primary)] hover:bg-[var(--color-nux-primary-hover)] px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95">
           <Plus size={20} />
           Nuevo Proyecto
         </button>
-      </div>      <div className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl shadow-lg overflow-hidden">
-        {/* Navigation & Main Filters */}
-        <div className="p-4 border-b border-[var(--color-nux-border)] space-y-4">
+      </div>
+
+      <div className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl shadow-lg overflow-hidden">
+        <div className="p-4 border-b border-[var(--color-nux-border)] space-y-4 select-none">
           <div className="flex flex-wrap items-center gap-4">
-            {/* Client Search */}
-            <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-nux-text-muted)]" size={18} />
+            <div className="relative flex-1 min-w-[240px] group">
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${searchTerm ? 'text-[var(--color-nux-primary)]' : 'text-[var(--color-nux-text-muted)] group-focus-within:text-[var(--color-nux-primary)]'}`} size={18} />
               <input 
                 type="text" 
                 placeholder="Buscar cliente..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-[var(--color-nux-primary)] transition-all shadow-sm"
+                className={`w-full bg-[var(--color-nux-bg)] border rounded-lg pl-10 pr-4 h-11 text-sm focus:outline-none transition-all duration-200 text-white ${
+                  searchTerm 
+                  ? 'border-[var(--color-nux-primary)] bg-[var(--color-nux-primary)]/10 shadow-[0_0_15px_rgba(124,58,237,0.2)] ring-1 ring-[var(--color-nux-primary)]/30' 
+                  : 'border-[var(--color-nux-border)] focus:border-[var(--color-nux-primary)] focus:bg-[var(--color-nux-primary)]/10 focus:shadow-[0_0_15px_rgba(124,58,237,0.2)] focus:ring-1 focus:ring-[var(--color-nux-primary)]/30'
+                }`}
               />
             </div>
 
-            {/* Developer Filter */}
             <div className="relative min-w-[200px] group">
               <div 
                 onClick={() => setShowDevDropdown(!showDevDropdown)}
-                className={`flex items-center gap-2 h-11 bg-[var(--color-nux-bg)] border rounded-lg px-4 text-sm cursor-pointer transition-all ${
-                  showDevDropdown ? 'border-[var(--color-nux-primary)] ring-2 ring-[var(--color-nux-primary)]/20' : 'border-[var(--color-nux-border)] hover:border-[var(--color-nux-primary)]'
+                className={`flex items-center gap-2 h-11 bg-[var(--color-nux-bg)] border rounded-lg px-4 text-sm cursor-pointer transition-all duration-200 ${
+                  showDevDropdown || selectedDevs.length > 0
+                  ? 'border-[var(--color-nux-primary)] bg-[var(--color-nux-primary)]/10 text-white shadow-[0_0_15px_rgba(124,58,237,0.2)] ring-1 ring-[var(--color-nux-primary)]/30' 
+                  : 'border-[var(--color-nux-border)] text-[var(--color-nux-text-muted)] hover:border-[var(--color-nux-primary)] hover:bg-[var(--color-nux-primary)]/10 hover:text-white'
                 }`}
               >
                 <Users size={18} className={`${showDevDropdown || selectedDevs.length > 0 ? 'text-[var(--color-nux-primary)]' : 'text-[var(--color-nux-text-muted)]'}`} />
@@ -326,10 +514,10 @@ const Projects = () => {
               {showDevDropdown && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowDevDropdown(false)}></div>
-                  <div className="absolute top-full left-0 mt-2 w-64 bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-20 p-2 animate-dribbble-pop origin-top">
+                  <div className="absolute top-full left-0 mt-2 w-64 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-[80] p-2 animate-dribbble-pop origin-top">
                     <div className="max-h-60 overflow-y-auto space-y-1 p-1 custom-scrollbar">
                       {developersList.map(dev => (
-                        <label key={dev._id} className="flex items-center gap-3 p-2.5 hover:bg-[var(--color-nux-bg)] rounded-lg cursor-pointer transition-all group/item">
+                        <label key={dev._id} className="flex items-center gap-3 p-2.5 hover:bg-[var(--color-nux-primary)]/10 rounded-lg cursor-pointer transition-all duration-200 group/item">
                           <div className="relative flex items-center">
                             <input 
                               type="checkbox" 
@@ -362,21 +550,20 @@ const Projects = () => {
               )}
             </div>
 
-            {/* Sorting */}
-            <div className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0 group">
               <div 
-                className={`flex items-center gap-2 h-11 px-4 border rounded-lg text-sm cursor-pointer transition-all ${
-                  sortConfig.active 
-                  ? 'bg-[var(--color-nux-primary)] border-[var(--color-nux-primary)] text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]' 
-                  : 'bg-[var(--color-nux-bg)] border-[var(--color-nux-border)] text-[var(--color-nux-text-muted)] hover:border-[var(--color-nux-primary)] hover:text-white'
+                className={`flex items-center gap-2 h-11 px-4 border rounded-lg text-sm cursor-pointer transition-all duration-200 ${
+                  sortConfig.active || showSortDropdown
+                  ? 'border-[var(--color-nux-primary)] bg-[var(--color-nux-primary)]/10 text-white shadow-[0_0_15px_rgba(124,58,237,0.2)] ring-1 ring-[var(--color-nux-primary)]/30' 
+                  : 'bg-[var(--color-nux-bg)] border-[var(--color-nux-border)] text-[var(--color-nux-text-muted)] hover:border-[var(--color-nux-primary)] hover:text-white hover:bg-[var(--color-nux-primary)]/10'
                 }`}
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
               >
                 {!sortConfig.active ? (
                   <>
-                    <ArrowUpDown size={18} />
+                    <ArrowUpDown size={18} className={`${showSortDropdown ? 'text-[var(--color-nux-primary)]' : ''}`} />
                     <span className="font-medium">Ordenar</span>
-                    <ChevronDown size={16} className={`ml-auto opacity-50 transition-transform duration-300 ${showSortDropdown ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={16} className={`ml-auto transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${showSortDropdown ? 'rotate-180 text-[var(--color-nux-primary)]' : 'text-[var(--color-nux-text-muted)]'}`} />
                   </>
                 ) : (
                   <>
@@ -393,7 +580,7 @@ const Projects = () => {
                     >
                       <X size={14} />
                     </button>
-                    <ChevronDown size={16} className={`ml-auto opacity-70 transition-transform duration-300 ${showSortDropdown ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={16} className={`ml-auto transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${showSortDropdown ? 'rotate-180' : 'text-[var(--color-nux-text-muted)]'}`} />
                   </>
                 )}
               </div>
@@ -401,61 +588,31 @@ const Projects = () => {
               {showSortDropdown && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowSortDropdown(false)}></div>
-                  <div className="absolute top-full right-0 mt-2 w-64 bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-20 p-2 animate-dribbble-pop origin-top">
+                  <div className="absolute top-full right-0 mt-2 w-64 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-[80] p-2 animate-dribbble-pop origin-top">
                     <div className="space-y-2 p-1">
                       {sortOptions.map(option => (
                         <div key={option.key} className="space-y-1 pb-2 mb-2 border-b border-[var(--color-nux-border)] last:border-0 last:mb-0 last:pb-0">
-                          <p className="px-2 py-1 text-[10px] font-bold text-[var(--color-nux-text-muted)] uppercase tracking-widest flex items-center gap-2">
-                            {option.icon} {option.label}
-                          </p>
-                          <div className="grid grid-cols-1 gap-1">
+                          <div className="px-2 py-1 text-[10px] font-bold text-[var(--color-nux-text-muted)] uppercase tracking-wider">{option.label}</div>
+                          <div className="grid grid-cols-2 gap-1">
                             <button 
                               onClick={() => { setSortConfig({ key: option.key, order: 'asc', active: true }); setShowSortDropdown(false); }}
-                              className={`group w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                              className={`flex items-center justify-between p-2.5 rounded-lg text-xs transition-all duration-200 group/sortitem ${
                                 sortConfig.key === option.key && sortConfig.order === 'asc' && sortConfig.active
                                 ? 'bg-[var(--color-nux-primary)] text-white font-bold' 
-                                : 'hover:bg-[var(--color-nux-primary)]/10 hover:text-[var(--color-nux-primary)]'
+                                : 'hover:bg-[var(--color-nux-primary)]/10 text-[var(--color-nux-text-muted)] hover:text-white'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
-                                <ArrowUp size={14} />
-                                <span>Ascendente</span>
-                              </div>
-                              {sortConfig.key === option.key && sortConfig.order === 'asc' && sortConfig.active && (
-                                <div 
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    setSortConfig({ key: 'date', order: 'desc', active: false }); 
-                                  }}
-                                  className="p-1 hover:bg-white/20 rounded-md transition-colors"
-                                >
-                                  <X size={14} />
-                                </div>
-                              )}
+                              <span>Ascendente</span>
                             </button>
                             <button 
                               onClick={() => { setSortConfig({ key: option.key, order: 'desc', active: true }); setShowSortDropdown(false); }}
-                              className={`group w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                              className={`flex items-center justify-between p-2.5 rounded-lg text-xs transition-all duration-200 group/sortitem ${
                                 sortConfig.key === option.key && sortConfig.order === 'desc' && sortConfig.active
                                 ? 'bg-[var(--color-nux-primary)] text-white font-bold' 
-                                : 'hover:bg-[var(--color-nux-primary)]/10 hover:text-[var(--color-nux-primary)]'
+                                : 'hover:bg-[var(--color-nux-primary)]/10 text-[var(--color-nux-text-muted)] hover:text-white'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
-                                <ArrowDown size={14} />
-                                <span>Descendente</span>
-                              </div>
-                              {sortConfig.key === option.key && sortConfig.order === 'desc' && sortConfig.active && (
-                                <div 
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    setSortConfig({ key: 'date', order: 'desc', active: false }); 
-                                  }}
-                                  className="p-1 hover:bg-white/20 rounded-md transition-colors"
-                                >
-                                  <X size={14} />
-                                </div>
-                              )}
+                              <span>Descendente</span>
                             </button>
                           </div>
                         </div>
@@ -466,24 +623,27 @@ const Projects = () => {
               )}
             </div>
 
-            {/* Toggle Advanced Filters */}
             <button 
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className={`flex items-center gap-2 h-11 px-4 rounded-lg border text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 h-11 px-4 rounded-xl border text-sm font-bold transition-all duration-300 group/filterbtn ${
                 showAdvanced 
-                ? 'bg-[var(--color-nux-primary)] border-[var(--color-nux-primary)] text-white shadow-[0_0_15px_rgba(124,58,237,0.3)]' 
-                : 'bg-[var(--color-nux-bg)] border-[var(--color-nux-border)] text-[var(--color-nux-text-muted)] hover:border-[var(--color-nux-primary)] hover:text-white'
+                ? 'bg-[var(--color-nux-primary)] border-white/40 text-white shadow-[0_0_20px_rgba(124,58,237,0.4)] hover:bg-[var(--color-nux-primary-hover)] hover:shadow-[0_0_35px_rgba(124,58,237,0.6)] hover:border-white/60 hover:-translate-y-1' 
+                : 'bg-[var(--color-nux-bg)] border-white/10 text-[var(--color-nux-text-muted)] hover:border-white/30 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Filter size={18} />
+              <Filter 
+                size={18} 
+                className={`transition-transform duration-300 ${
+                  showAdvanced ? 'text-white scale-110 rotate-12' : 'text-[var(--color-nux-text-muted)] group-hover/filterbtn:text-white group-hover/filterbtn:scale-110'
+                }`} 
+              />
               Filtros Avanzados
             </button>
 
-            {/* Clear Advanced Filters ONLY */}
-            {(filterStatus || filterType || filterPrice || filterMonth) && (
+            {(filterStatus || filterType || filterPrice || filterMonth || filterLate) && (
               <button 
                 onClick={() => {
-                  setFilterStatus(''); setFilterType(''); setFilterPrice(''); setFilterMonth('');
+                  setFilterStatus(''); setFilterType(''); setFilterPrice(''); setFilterMonth(''); setFilterLate('');
                 }}
                 className="text-sm text-red-400 hover:text-red-300 transition-colors underline underline-offset-4 font-medium"
               >
@@ -492,63 +652,45 @@ const Projects = () => {
             )}
           </div>
 
-          {/* Advanced Filters Section */}
           {showAdvanced && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-[var(--color-nux-bg)]/50 border border-[var(--color-nux-border)] rounded-xl animate-dribbble-pop origin-top">
-              <FilterDropdown 
-                label="Estado"
-                value={filterStatus}
-                placeholder="Todos los estados"
-                onChange={setFilterStatus}
-                options={[
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-5 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl animate-dribbble-pop origin-top select-none relative z-[60]">
+              <FilterDropdown label="Estado" value={filterStatus} placeholder="Todos los estados" onChange={setFilterStatus} options={[
                   { value: 'EN_DISENO', label: 'En Diseño' },
                   { value: 'EN_DESARROLLO', label: 'En Desarrollo' },
                   { value: 'TESTING', label: 'Testing' },
                   { value: 'ENTREGADO', label: 'Entregado' },
-                  { value: 'EN_PAUSA', label: 'En Pausa' },
                   { value: 'CANCELADO', label: 'Cancelado' },
-                ]}
-              />
-
-              <FilterDropdown 
-                label="Tipo de Proyecto"
-                value={filterType}
-                placeholder="Todos los tipos"
-                onChange={setFilterType}
-                options={[
+                ]} />
+              <FilterDropdown label="Tipo de Proyecto" value={filterType} placeholder="Todos los tipos" onChange={setFilterType} options={[
                   { value: 'Landing Page', label: 'Landing Page' },
                   { value: 'E-commerce', label: 'E-commerce' },
                   { value: 'App Movil', label: 'App Movil' },
                   { value: 'Software', label: 'Software' },
                   { value: 'Otro', label: 'Otro' },
-                ]}
-              />
-
-              <FilterDropdown 
-                label="Presupuesto"
-                value={filterPrice}
-                placeholder="Cualquier precio"
-                onChange={setFilterPrice}
-                options={[
+                ]} />
+              <FilterDropdown label="Presupuesto" value={filterPrice} placeholder="Cualquier precio" onChange={setFilterPrice} options={[
                   { value: '<1000', label: 'Menos de $1,000' },
                   { value: '1000-3000', label: '$1,000 - $3,000' },
                   { value: '3000-7000', label: '$3,000 - $7,000' },
                   { value: '>7000', label: 'Más de $7,000' },
-                ]}
-              />
-
+                ]} />
+              <FilterDropdown label="Mes de Entrega" value={filterMonth} placeholder="Cualquier mes" onChange={setFilterMonth} options={months} />
               <FilterDropdown 
-                label="Mes de Entrega"
-                value={filterMonth}
-                placeholder="Cualquier mes"
-                onChange={setFilterMonth}
-                options={months}
+                label="Tiempo de Entrega" 
+                value={filterLate} 
+                placeholder="Todos" 
+                onChange={setFilterLate} 
+                options={[
+                  { value: 'ACTIVE_LATE', label: 'Retrasados / En curso' },
+                  { value: 'PAST_LATE', label: 'Entrega Tardía' },
+                  { value: 'ON_TIME', label: 'Al día / A tiempo' },
+                ]} 
               />
             </div>
           )}
         </div>
         
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto relative z-0">
           <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
             <thead className="bg-[var(--color-nux-bg)] text-[var(--color-nux-text-muted)] border-b border-[var(--color-nux-border)]">
               <tr>
@@ -556,29 +698,35 @@ const Projects = () => {
                 <th className="px-6 py-4 font-medium">Servicio</th>
                 <th className="px-6 py-4 font-medium">Estado</th>
                 <th className="px-6 py-4 font-medium">Desarrolladores</th>
-                <th className="px-6 py-4 font-medium">Referido Por</th>
                 <th className="px-6 py-4 font-medium">Cronograma</th>
                 <th className="px-6 py-4 font-medium">Acordado</th>
                 <th className="px-6 py-4 font-medium">Pendiente</th>
-                <th className="px-6 py-4 font-medium text-right">Acciones</th>
+                <th className="px-6 py-4 font-medium text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-transparent">
               {loading ? (
                 <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-[var(--color-nux-text-muted)]">Cargando...</td>
+                  <td colSpan="8" className="px-6 py-8 text-center text-[var(--color-nux-text-muted)]">Cargando...</td>
                 </tr>
               ) : filteredAndSortedProjects.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="px-6 py-8 text-center text-[var(--color-nux-text-muted)]">No se encontraron proyectos con los filtros seleccionados.</td>
+                  <td colSpan="8" className="px-6 py-8 text-center text-[var(--color-nux-text-muted)]">No se encontraron proyectos con los filtros seleccionados.</td>
                 </tr>
               ) : (
                 filteredAndSortedProjects.map((p) => (
-                  <tr key={p._id} className="group border-b border-[var(--color-nux-border)] last:border-0 hover:bg-[var(--color-nux-surface-hover)] transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-white">{p.client?.name}</div>
-                      <div className="text-xs text-[var(--color-nux-text-muted)]">{p.client?.company || p.client?.email}</div>
+                  <tr 
+                    key={p._id} 
+                    className="group relative z-0 hover:z-10 border-b border-[var(--color-nux-border)] last:border-0 hover:bg-white/[0.03] transition-all duration-300 select-none cursor-default hover:scale-[1.005] hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
+                  >
+                    {/* Neon Bar Indicator */}
+                    <td className="px-6 py-4 relative">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-nux-primary)] scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-center pointer-events-none z-20 shadow-[0_0_15px_var(--color-nux-primary)]"></div>
+                      
+                      <div className="font-medium text-white group-hover:text-[var(--color-nux-primary-hover)] transition-colors">{p.client?.name}</div>
+                      <div className="text-xs text-[var(--color-nux-text-muted)]">{p.client?.company}</div>
                     </td>
+
                     <td className="px-6 py-4">{p.serviceType}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(p.status)}`}>
@@ -593,7 +741,6 @@ const Projects = () => {
                               key={i} 
                               src={dev.photoUrl || 'https://via.placeholder.com/150'} 
                               alt={dev.name}
-                              title={dev.name}
                               className="w-8 h-8 rounded-full border-2 border-[var(--color-nux-bg)]"
                             />
                           ))}
@@ -602,9 +749,6 @@ const Projects = () => {
                         <span className="text-[var(--color-nux-text-muted)] text-sm">Sin asignar</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-[var(--color-nux-text-muted)] text-sm">
-                      {p.referredBy || 'Desconocido'}
-                    </td>
                     <td className="px-6 py-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-xs">
@@ -612,12 +756,29 @@ const Projects = () => {
                           <span className="text-[var(--color-nux-text-muted)]">Inicio:</span>
                           <span className="font-medium">{formatDate(p.startDate)}</span>
                         </div>
+
                         {p.status === 'ENTREGADO' ? (
-                          <div className="flex items-center gap-2 text-xs">
-                            <CheckCircle size={12} className="text-green-400" />
-                            <span className="text-[var(--color-nux-text-muted)]">Final:</span>
-                            <span className="font-medium">{formatDate(p.actualDeliveryDate)}</span>
-                          </div>
+                          <>
+                            {p.actualDeliveryDate && p.expectedDeliveryDate && new Date(p.actualDeliveryDate) > new Date(p.expectedDeliveryDate) ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 text-xs opacity-60">
+                                  <Clock size={12} className="text-yellow-400" />
+                                  <span className="text-[var(--color-nux-text-muted)]">Pactado:</span>
+                                  <span className="font-medium">{formatDate(p.expectedDeliveryDate)}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-orange-400 font-bold bg-orange-400/5 p-1 rounded border border-orange-400/10">
+                                  <CheckCircle size={12} className="text-orange-400" />
+                                  <span>Final (Tardía): {formatDate(p.actualDeliveryDate)}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 text-xs">
+                                <CheckCircle size={12} className="text-green-400" />
+                                <span className="text-[var(--color-nux-text-muted)]">Final:</span>
+                                <span className="font-medium">{formatDate(p.actualDeliveryDate)}</span>
+                              </div>
+                            )}
+                          </>
                         ) : (
                           <div className="flex items-center gap-2 text-xs">
                             <Clock size={12} className="text-yellow-400" />
@@ -625,25 +786,46 @@ const Projects = () => {
                             <span className="font-medium">{formatDate(p.expectedDeliveryDate)}</span>
                           </div>
                         )}
+
+                        {p.status !== 'ENTREGADO' && p.expectedDeliveryDate && (() => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const deliveryDate = new Date(p.expectedDeliveryDate);
+                          deliveryDate.setHours(0, 0, 0, 0);
+                          return deliveryDate < today;
+                        })() && (
+                          <div className="flex items-center gap-2 text-red-400 mt-2 pt-2 border-t border-red-400/10 animate-pulse">
+                            <Clock size={12} className="text-red-400" />
+                            <div className="flex flex-col">
+                              <span className="text-[9px] font-bold uppercase tracking-wider">Día en curso (Retraso)</span>
+                              <span className="font-bold">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 font-medium">{formatCurrency(p.finances?.agreedPrice || 0)}</td>
                     <td className="px-6 py-4 font-medium text-red-400">{formatCurrency(p.finances?.pendingAmount || 0)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2 min-w-[120px]">
                         <button 
                           onClick={() => { setSelectedProject(p); setShowPaymentsModal(true); }}
-                          className="p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded-lg transition-colors" 
-                          title="Ver Pagos y Recibos"
+                          className="p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95" 
                         >
                           <FileText size={16} />
                         </button>
-                        <button className="p-2 text-[var(--color-nux-text-muted)] hover:text-white hover:bg-[var(--color-nux-bg)] rounded-lg transition-colors">
+                        <button className="p-2 text-[var(--color-nux-text-muted)] hover:text-white hover:bg-[var(--color-nux-bg)] rounded-lg transition-all duration-200 hover:scale-110 active:scale-95">
                           <Edit2 size={16} />
                         </button>
-                        <button className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors">
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="w-8 flex justify-center">
+                          {p.status === 'CANCELADO' ? (
+                            <button className="p-2 text-red-400/60 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95">
+                              <Trash2 size={16} />
+                            </button>
+                          ) : (
+                            <div className="w-8"></div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
