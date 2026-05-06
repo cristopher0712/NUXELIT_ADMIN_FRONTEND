@@ -108,6 +108,15 @@ body {
   animation: gradient-shift 15s ease infinite;
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 4.5s infinite linear;
+}
+
 @keyframes particle-drift {
   0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
   20% { opacity: 0.8; }

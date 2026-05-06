@@ -89,7 +89,7 @@ const Projects = () => {
 
     return (
       <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
           <div className="p-6 border-b border-[var(--color-nux-border)] flex justify-between items-center bg-gradient-to-r from-[var(--color-nux-surface)] to-[var(--color-nux-bg)]">
             <div>
               <h2 className="text-xl font-bold">Historial de Pagos</h2>
@@ -100,8 +100,8 @@ const Projects = () => {
             </button>
           </div>
           
-          <div className="p-6">
-            <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               <div className="bg-[var(--color-nux-bg)] p-4 rounded-xl border border-[var(--color-nux-border)]">
                 <p className="text-xs text-[var(--color-nux-text-muted)] uppercase font-bold tracking-wider">Acordado</p>
                 <p className="text-lg font-bold mt-1 text-white">{formatCurrency(project.finances?.agreedPrice || 0)}</p>
@@ -122,8 +122,8 @@ const Projects = () => {
                   No se han registrado pagos para este proyecto.
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-xl border border-[var(--color-nux-border)]">
-                  <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto rounded-xl border border-[var(--color-nux-border)]">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead className="bg-[var(--color-nux-bg)] text-[var(--color-nux-text-muted)] border-b border-[var(--color-nux-border)]">
                       <tr>
                         <th className="px-4 py-3 font-medium">Fecha</th>
@@ -216,10 +216,10 @@ const Projects = () => {
             <>
               <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
               <div className="absolute top-full left-0 mt-2 w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-[100] p-2 animate-dribbble-pop origin-top">
-                <div className="max-h-60 overflow-y-auto space-y-1 p-1 custom-scrollbar bg-[var(--color-nux-bg)] rounded-lg">
+                <div className="max-h-60 overflow-y-auto space-y-1 p-1 custom-scrollbar bg-[var(--color-nux-bg)] rounded-lg" data-lenis-prevent="true">
                   <div 
                     onClick={() => { onChange(''); setIsOpen(false); }}
-                    className="p-2.5 hover:bg-[var(--color-nux-bg)] rounded-lg cursor-pointer text-sm text-[var(--color-nux-text-muted)] transition-colors hover:text-white"
+                    className="p-2.5 hover:bg-white/5 rounded-lg cursor-pointer text-sm text-[var(--color-nux-text-muted)] transition-all duration-300 ease-out hover:text-white hover:translate-x-1"
                   >
                     {placeholder}
                   </div>
@@ -227,9 +227,9 @@ const Projects = () => {
                     <div 
                       key={opt.value}
                       onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                      className={`p-2.5 rounded-lg cursor-pointer text-sm transition-all ${
+                      className={`p-2.5 rounded-lg cursor-pointer text-sm transition-all duration-300 ease-out hover:translate-x-1 ${
                         value === opt.value 
-                        ? 'bg-[var(--color-nux-primary)] text-white font-bold' 
+                        ? 'bg-[var(--color-nux-primary)] text-white font-bold shadow-[0_0_10px_rgba(124,58,237,0.3)]' 
                         : 'hover:bg-[var(--color-nux-primary)]/10 text-[var(--color-nux-text-muted)] hover:text-white'
                       }`}
                     >
@@ -248,7 +248,14 @@ const Projects = () => {
   const filteredAndSortedProjects = projects.filter(p => {
     const matchesSearch = p.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          p.client?.company?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDevs = selectedDevs.length === 0 || p.developers?.some(dev => selectedDevs.includes(dev._id));
+    let matchesDevs = true;
+    if (selectedDevs.length === 1) {
+      matchesDevs = p.developers?.some(dev => dev._id === selectedDevs[0]);
+    } else if (selectedDevs.length > 1) {
+      const projectDevIds = p.developers?.map(d => d._id) || [];
+      matchesDevs = projectDevIds.length === selectedDevs.length && 
+                    selectedDevs.every(id => projectDevIds.includes(id));
+    }
     const matchesStatus = !filterStatus || p.status === filterStatus;
     const matchesType = !filterType || p.serviceType === filterType;
     let matchesPrice = true;
@@ -321,10 +328,10 @@ const Projects = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
+        <div className="w-full sm:w-auto">
           <p className="text-[var(--color-nux-text-muted)] font-medium">Gestión de clientes y entregas de proyectos</p>
         </div>
-        <button className="flex items-center gap-2 bg-[var(--color-nux-primary)] hover:bg-[var(--color-nux-primary-hover)] px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95">
+        <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[var(--color-nux-primary)] hover:bg-[var(--color-nux-primary-hover)] px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95">
           <Plus size={20} />
           Nuevo Proyecto
         </button>
@@ -332,8 +339,8 @@ const Projects = () => {
 
       <div className="bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-xl shadow-lg overflow-hidden">
         <div className="p-4 border-b border-[var(--color-nux-border)] space-y-4 select-none">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[240px] group">
+          <div className="flex flex-col md:flex-row md:flex-wrap items-center gap-4 w-full">
+            <div className="relative w-full md:flex-1 md:min-w-[240px] group">
               <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${searchTerm ? 'text-[var(--color-nux-primary)]' : 'text-[var(--color-nux-text-muted)] group-focus-within:text-[var(--color-nux-primary)]'}`} size={18} />
               <input 
                 type="text" 
@@ -348,7 +355,8 @@ const Projects = () => {
               />
             </div>
 
-            <div className="relative min-w-[200px] group">
+            <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
+              <div className="relative flex-1 md:min-w-[200px] group">
               <div 
                 onClick={() => setShowDevDropdown(!showDevDropdown)}
                 className={`flex items-center gap-2 h-11 bg-[var(--color-nux-bg)] border rounded-lg px-4 text-sm cursor-pointer transition-all duration-200 ${
@@ -370,7 +378,7 @@ const Projects = () => {
                   <div className="absolute top-full left-0 mt-2 w-64 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-[80] p-2 animate-dribbble-pop origin-top">
                     <div className="max-h-60 overflow-y-auto space-y-1 p-1 custom-scrollbar">
                       {developersList.map(dev => (
-                        <label key={dev._id} className="flex items-center gap-3 p-2.5 hover:bg-[var(--color-nux-primary)]/10 rounded-lg cursor-pointer transition-all duration-200 group/item">
+                        <label key={dev._id} className="flex items-center gap-3 p-2.5 hover:bg-[var(--color-nux-primary)]/10 rounded-lg cursor-pointer transition-all duration-300 ease-out hover:translate-x-1 group/item">
                           <div className="relative flex items-center">
                             <input 
                               type="checkbox" 
@@ -449,7 +457,7 @@ const Projects = () => {
                           <div className="grid grid-cols-2 gap-1">
                             <button 
                               onClick={() => { setSortConfig({ key: option.key, order: 'asc', active: true }); setShowSortDropdown(false); }}
-                              className={`flex items-center justify-between p-2.5 rounded-lg text-xs transition-all duration-200 group/sortitem ${
+                              className={`flex items-center justify-between p-2.5 rounded-lg text-xs transition-all duration-300 ease-out hover:-translate-y-0.5 group/sortitem ${
                                 sortConfig.key === option.key && sortConfig.order === 'asc' && sortConfig.active
                                 ? 'bg-[var(--color-nux-primary)] text-white font-bold' 
                                 : 'hover:bg-[var(--color-nux-primary)]/10 text-[var(--color-nux-text-muted)] hover:text-white'
@@ -459,7 +467,7 @@ const Projects = () => {
                             </button>
                             <button 
                               onClick={() => { setSortConfig({ key: option.key, order: 'desc', active: true }); setShowSortDropdown(false); }}
-                              className={`flex items-center justify-between p-2.5 rounded-lg text-xs transition-all duration-200 group/sortitem ${
+                              className={`flex items-center justify-between p-2.5 rounded-lg text-xs transition-all duration-300 ease-out hover:-translate-y-0.5 group/sortitem ${
                                 sortConfig.key === option.key && sortConfig.order === 'desc' && sortConfig.active
                                 ? 'bg-[var(--color-nux-primary)] text-white font-bold' 
                                 : 'hover:bg-[var(--color-nux-primary)]/10 text-[var(--color-nux-text-muted)] hover:text-white'
@@ -476,7 +484,10 @@ const Projects = () => {
               )}
             </div>
 
-            <button 
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+              <button 
               onClick={() => setShowAdvanced(!showAdvanced)}
               className={`flex items-center gap-2 h-11 px-4 rounded-xl border text-sm font-bold transition-all duration-300 group/filterbtn ${
                 showAdvanced 
@@ -503,10 +514,11 @@ const Projects = () => {
                 Limpiar filtros
               </button>
             )}
+            </div>
           </div>
 
           {showAdvanced && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-5 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl animate-dribbble-pop origin-top select-none relative z-[60]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-5 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl animate-dribbble-pop origin-top select-none relative z-[60]">
               <FilterDropdown label="Estado" value={filterStatus} placeholder="Todos los estados" onChange={setFilterStatus} options={[
                   { value: 'PENDIENTE', label: 'Pendiente' },
                   { value: 'EN_DISENO', label: 'En Diseño' },
