@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../api/axios';
-import { Plus, Edit2, Trash2, Search, Calendar, FileText, ExternalLink, X, CheckCircle, Clock, Filter, Users, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Calendar, FileText, ExternalLink, X, CheckCircle, Clock, Filter, Users, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Save, MoreHorizontal } from 'lucide-react';
 
 const Projects = () => {
   const [projects, setProjects] = useState([]);
@@ -20,6 +21,64 @@ const Projects = () => {
   const [showDevDropdown, setShowDevDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'date', order: 'desc' }); // Default sort
+
+  // Edit States
+  const [editingProjectId, setEditingProjectId] = useState(null);
+  const [editedProject, setEditedProject] = useState(null);
+
+  // Details Modal States
+  const [detailsModalProject, setDetailsModalProject] = useState(null);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+
+  const startEditing = (p) => {
+    setEditingProjectId(p._id);
+    setEditedProject({
+      ...p,
+      client: { ...p.client },
+      developers: p.developers ? p.developers.map(d => d._id) : []
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingProjectId(null);
+    setEditedProject(null);
+  };
+
+  const saveEditing = async () => {
+    try {
+      await api.put(`/projects/${editingProjectId}`, {
+        client: editedProject.client,
+        serviceType: editedProject.serviceType,
+        status: editedProject.status,
+        developers: editedProject.developers,
+        startDate: editedProject.startDate,
+        expectedDeliveryDate: editedProject.expectedDeliveryDate,
+        actualDeliveryDate: editedProject.actualDeliveryDate
+      });
+      fetchProjects();
+      setEditingProjectId(null);
+      setEditedProject(null);
+    } catch (err) {
+      console.error('Error saving project:', err);
+      // Fallback: alert on error
+      alert('Error al guardar el proyecto. Inténtalo de nuevo.');
+    }
+  };
+
+  const saveDetails = async () => {
+    try {
+      await api.put(`/projects/${detailsModalProject._id}`, {
+        client: detailsModalProject.client,
+        serviceType: detailsModalProject.serviceType,
+        details: detailsModalProject.details
+      });
+      fetchProjects();
+      setIsEditingDetails(false);
+    } catch (err) {
+      console.error('Error saving details:', err);
+      alert('Error al guardar los detalles. Inténtalo de nuevo.');
+    }
+  };
 
   useEffect(() => {
     fetchProjects();
@@ -325,6 +384,153 @@ const Projects = () => {
     { value: '9', label: 'Octubre' }, { value: '10', label: 'Noviembre' }, { value: '11', label: 'Diciembre' }
   ];
 
+  const CustomSelect = ({ value, options, onChange, placeholder, minWidth = 'min-w-[120px]' }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedOption = options.find(o => o.value === value);
+    const triggerRef = React.useRef(null);
+    const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+    const openMenu = (e) => {
+      e.stopPropagation();
+      if (!isOpen) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        setCoords({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      }
+      setIsOpen(!isOpen);
+    };
+
+    return (
+      <div className={`${minWidth}`}>
+        <div 
+          ref={triggerRef}
+          onClick={openMenu}
+          className={`w-full bg-[var(--color-nux-bg)] border rounded px-2 py-1.5 text-xs cursor-pointer flex justify-between items-center transition-all ${isOpen ? 'border-[var(--color-nux-primary)] shadow-[0_0_10px_rgba(124,58,237,0.2)] text-white' : 'border-[var(--color-nux-primary)]/40 hover:border-[var(--color-nux-primary)] text-white'}`}
+        >
+          <span className={`truncate pr-2 ${!selectedOption && placeholder ? 'text-[var(--color-nux-text-muted)]' : ''}`}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+          <ChevronDown size={14} className={`transition-transform duration-300 flex-shrink-0 ${isOpen ? 'rotate-180 text-[var(--color-nux-primary)]' : 'text-[var(--color-nux-text-muted)]'}`} />
+        </div>
+        {isOpen && createPortal(
+          <>
+            <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}></div>
+            <div 
+              style={{ top: coords.top, left: coords.left, width: Math.max(coords.width, 150) }}
+              className="fixed bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-lg shadow-2xl z-[101] p-1 animate-dribbble-pop origin-top max-h-48 overflow-y-auto custom-scrollbar"
+            >
+              {options.map(opt => (
+                <div 
+                  key={opt.value}
+                  onClick={(e) => { e.stopPropagation(); onChange(opt.value); setIsOpen(false); }}
+                  className={`px-2 py-1.5 rounded-md cursor-pointer text-xs transition-all duration-200 hover:translate-x-1 ${
+                    value === opt.value 
+                    ? 'bg-[var(--color-nux-primary)] text-white font-bold' 
+                    : 'hover:bg-[var(--color-nux-primary)]/20 text-[var(--color-nux-text-muted)] hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                </div>
+              ))}
+            </div>
+          </>,
+          document.body
+        )}
+      </div>
+    );
+  };
+
+  const CustomDatePicker = ({ value, onChange, placeholder }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [currentMonth, setCurrentMonth] = useState(value ? new Date(value + 'T00:00:00Z') : new Date());
+    const triggerRef = React.useRef(null);
+    const [coords, setCoords] = useState({ top: 0, left: 0 });
+    
+    const daysInMonth = new Date(currentMonth.getUTCFullYear(), currentMonth.getUTCMonth() + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentMonth.getUTCFullYear(), currentMonth.getUTCMonth(), 1).getDay();
+    
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const nextMonth = (e) => { e.stopPropagation(); setCurrentMonth(new Date(Date.UTC(currentMonth.getUTCFullYear(), currentMonth.getUTCMonth() + 1, 1))); };
+    const prevMonth = (e) => { e.stopPropagation(); setCurrentMonth(new Date(Date.UTC(currentMonth.getUTCFullYear(), currentMonth.getUTCMonth() - 1, 1))); };
+
+    const handleSelectDate = (day, e) => {
+      e.stopPropagation();
+      const newDate = new Date(Date.UTC(currentMonth.getUTCFullYear(), currentMonth.getUTCMonth(), day));
+      onChange(newDate.toISOString().split('T')[0]);
+      setIsOpen(false);
+    };
+
+    const openMenu = (e) => {
+      e.stopPropagation();
+      if (!isOpen) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        let menuLeft = rect.left;
+        if (menuLeft + 220 > window.innerWidth) {
+          menuLeft = window.innerWidth - 230;
+        }
+        setCoords({ top: rect.bottom + 4, left: menuLeft });
+      }
+      setIsOpen(!isOpen);
+    };
+
+    return (
+      <div className="flex-1">
+        <div 
+          ref={triggerRef}
+          onClick={openMenu}
+          className={`w-full bg-[var(--color-nux-bg)] border rounded px-2 py-1.5 text-xs cursor-pointer flex justify-between items-center transition-all ${isOpen ? 'border-[var(--color-nux-primary)] shadow-[0_0_10px_rgba(124,58,237,0.2)] text-white' : 'border-[var(--color-nux-primary)]/40 hover:border-[var(--color-nux-primary)] text-white'}`}
+        >
+          <span className={`truncate ${!value ? 'text-[var(--color-nux-text-muted)]' : ''}`}>
+            {value ? new Date(value + 'T00:00:00Z').toLocaleDateString('es-ES', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' }) : placeholder}
+          </span>
+          <Calendar size={14} className={`transition-colors duration-300 flex-shrink-0 ml-2 ${isOpen ? 'text-[var(--color-nux-primary)]' : 'text-[var(--color-nux-text-muted)]'}`} />
+        </div>
+        {isOpen && createPortal(
+          <>
+            <div className="fixed inset-0 z-[100]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}></div>
+            <div 
+              style={{ top: coords.top, left: coords.left }}
+              className="fixed w-[220px] bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-xl shadow-2xl z-[101] p-3 animate-dribbble-pop origin-top"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <button onClick={prevMonth} className="p-1 hover:bg-white/10 rounded-lg text-[var(--color-nux-text-muted)] hover:text-white transition-colors"><ChevronDown className="rotate-90" size={14} /></button>
+                <div className="text-xs font-bold text-white tracking-wider uppercase">{monthNames[currentMonth.getUTCMonth()]} {currentMonth.getUTCFullYear()}</div>
+                <button onClick={nextMonth} className="p-1 hover:bg-white/10 rounded-lg text-[var(--color-nux-text-muted)] hover:text-white transition-colors"><ChevronDown className="-rotate-90" size={14} /></button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center mb-1 border-b border-white/5 pb-1">
+                {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'].map(d => <div key={d} className="text-[9px] text-[var(--color-nux-primary)] font-bold uppercase">{d}</div>)}
+              </div>
+              <div className="grid grid-cols-7 gap-1 mt-2">
+                {blanks.map(b => <div key={`blank-${b}`} className="h-6"></div>)}
+                {days.map(d => {
+                  const isSelected = value && new Date(value + 'T00:00:00Z').getUTCDate() === d && new Date(value + 'T00:00:00Z').getUTCMonth() === currentMonth.getUTCMonth() && new Date(value + 'T00:00:00Z').getUTCFullYear() === currentMonth.getUTCFullYear();
+                  const isToday = new Date().getDate() === d && new Date().getMonth() === currentMonth.getUTCMonth() && new Date().getFullYear() === currentMonth.getUTCFullYear();
+                  return (
+                    <div 
+                      key={d}
+                      onClick={(e) => handleSelectDate(d, e)}
+                      className={`h-6 flex items-center justify-center text-xs rounded-md cursor-pointer transition-all duration-200 hover:scale-110 relative ${
+                        isSelected 
+                        ? 'bg-[var(--color-nux-primary)] text-white font-bold shadow-[0_0_10px_rgba(124,58,237,0.4)] z-10' 
+                        : 'text-[var(--color-nux-text-muted)] hover:bg-[var(--color-nux-primary)]/20 hover:text-white'
+                      }`}
+                    >
+                      {d}
+                      {isToday && !isSelected && <div className="absolute bottom-0.5 w-1 h-1 bg-[var(--color-nux-primary)] rounded-full"></div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -589,109 +795,270 @@ const Projects = () => {
                     <td className="px-6 py-4 relative">
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-nux-primary)] scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-center pointer-events-none z-20 shadow-[0_0_15px_var(--color-nux-primary)]"></div>
                       
-                      <div className="font-medium text-white group-hover:text-[var(--color-nux-primary-hover)] transition-colors">{p.client?.name}</div>
-                      <div className="text-xs text-[var(--color-nux-text-muted)]">{p.client?.company}</div>
-                    </td>
-
-                    <td className="px-6 py-4">{p.serviceType}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(p.status)}`}>
-                        {p.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {p.developers && p.developers.length > 0 ? (
-                        <div className="flex -space-x-2">
-                          {p.developers.map((dev, i) => (
-                            <img 
-                              key={i} 
-                              src={dev.photoUrl || 'https://via.placeholder.com/150'} 
-                              alt={dev.name}
-                              className="w-8 h-8 rounded-full border-2 border-[var(--color-nux-bg)]"
-                            />
-                          ))}
+                      {editingProjectId === p._id ? (
+                        <div className="flex flex-col gap-2 w-[180px] max-w-[200px]">
+                          <input 
+                            type="text" 
+                            value={editedProject.client?.name || ''} 
+                            onChange={(e) => setEditedProject({...editedProject, client: {...editedProject.client, name: e.target.value}})}
+                            className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)] rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--color-nux-primary)]/50"
+                            placeholder="Nombre del cliente"
+                          />
+                          <input 
+                            type="text" 
+                            value={editedProject.client?.company || ''} 
+                            onChange={(e) => setEditedProject({...editedProject, client: {...editedProject.client, company: e.target.value}})}
+                            className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)] rounded px-2 py-1 text-xs text-[var(--color-nux-text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--color-nux-primary)]/50"
+                            placeholder="Compañía"
+                          />
                         </div>
                       ) : (
-                        <span className="text-[var(--color-nux-text-muted)] text-sm">Sin asignar</span>
+                        <>
+                          <div className="font-medium text-white group-hover:text-[var(--color-nux-primary-hover)] transition-colors">{p.client?.name}</div>
+                          <div className="text-xs text-[var(--color-nux-text-muted)]">{p.client?.company}</div>
+                        </>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-xs">
-                          <Calendar size={12} className="text-blue-400" />
-                          <span className="text-[var(--color-nux-text-muted)]">Inicio:</span>
-                          <span className="font-medium">{formatDate(p.startDate)}</span>
-                        </div>
 
-                        {p.status === 'ENTREGADO' ? (
+                    <td className="px-6 py-4">
+                      {editingProjectId === p._id ? (
+                        <CustomSelect
+                          value={editedProject.serviceType}
+                          onChange={(val) => setEditedProject({...editedProject, serviceType: val})}
+                          placeholder="Servicio"
+                          options={[
+                            { value: 'Landing Page', label: 'Landing Page' },
+                            { value: 'E-commerce', label: 'E-commerce' },
+                            { value: 'App Movil', label: 'App Movil' },
+                            { value: 'Software', label: 'Software' },
+                            { value: 'Otro', label: 'Otro' }
+                          ]}
+                        />
+                      ) : (
+                        p.serviceType
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {editingProjectId === p._id ? (
+                        <CustomSelect
+                          value={editedProject.status}
+                          onChange={(val) => setEditedProject({...editedProject, status: val})}
+                          placeholder="Estado"
+                          options={[
+                            { value: 'PENDIENTE', label: 'PENDIENTE' },
+                            { value: 'EN_DISENO', label: 'EN DISEÑO' },
+                            { value: 'EN_DESARROLLO', label: 'EN DESARROLLO' },
+                            { value: 'TESTING', label: 'TESTING' },
+                            { value: 'ENTREGADO', label: 'ENTREGADO' },
+                            { value: 'CANCELADO', label: 'CANCELADO' }
+                          ]}
+                        />
+                      ) : (
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(p.status)}`}>
+                          {p.status.replace('_', ' ')}
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {editingProjectId === p._id ? (
+                        <div className="space-y-2 min-w-[160px]">
+                          <div className="flex flex-wrap gap-1">
+                            {editedProject.developers.map((devId) => {
+                              const dev = developersList.find(d => d._id === devId);
+                              if (!dev) return null;
+                              return (
+                                <span key={devId} className="flex items-center gap-1 bg-[var(--color-nux-bg)] border border-[var(--color-nux-border)] rounded-full pl-1 pr-1.5 py-0.5 text-[10px]">
+                                  <img src={dev.photoUrl || 'https://via.placeholder.com/150'} alt={dev.name} className="w-4 h-4 rounded-full" />
+                                  <span className="truncate max-w-[60px]">{dev.name}</span>
+                                  <button onClick={() => setEditedProject({...editedProject, developers: editedProject.developers.filter(id => id !== devId)})} className="text-red-400 hover:text-red-300 ml-0.5"><X size={10} /></button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                          <CustomSelect
+                            value=""
+                            onChange={(val) => {
+                              if (val && !editedProject.developers.includes(val)) {
+                                setEditedProject({...editedProject, developers: [...editedProject.developers, val]});
+                              }
+                            }}
+                            placeholder="+ Añadir Dev"
+                            options={developersList.filter(d => !editedProject.developers.includes(d._id)).map(dev => ({ value: dev._id, label: dev.name }))}
+                          />
+                        </div>
+                      ) : (
+                        p.developers && p.developers.length > 0 ? (
+                          <div className="flex -space-x-2">
+                            {p.developers.map((dev, i) => (
+                              <img 
+                                key={i} 
+                                src={dev.photoUrl || 'https://via.placeholder.com/150'} 
+                                alt={dev.name}
+                                className="w-8 h-8 rounded-full border-2 border-[var(--color-nux-bg)]"
+                                title={dev.name}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[var(--color-nux-text-muted)] text-sm">Sin asignar</span>
+                        )
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="space-y-2">
+                        {editingProjectId === p._id ? (
                           <>
-                            {p.actualDeliveryDate && p.expectedDeliveryDate && new Date(p.actualDeliveryDate) > new Date(p.expectedDeliveryDate) ? (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2 text-xs opacity-60">
-                                  <Clock size={12} className="text-yellow-400" />
-                                  <span className="text-[var(--color-nux-text-muted)]">Pactado:</span>
-                                  <span className="font-medium">{formatDate(p.expectedDeliveryDate)}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-orange-400 font-bold bg-orange-400/5 p-1 rounded border border-orange-400/10">
-                                  <CheckCircle size={12} className="text-orange-400" />
-                                  <span>Final (Tardía): {formatDate(p.actualDeliveryDate)}</span>
-                                </div>
-                              </div>
-                            ) : (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Calendar size={12} className="text-blue-400 flex-shrink-0" />
+                              <span className="text-[var(--color-nux-text-muted)] w-10 flex-shrink-0">Inicio:</span>
+                              <CustomDatePicker 
+                                value={editedProject.startDate ? new Date(editedProject.startDate).toISOString().split('T')[0] : ''}
+                                onChange={(val) => setEditedProject({...editedProject, startDate: val})}
+                                placeholder="Seleccionar"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <Clock size={12} className="text-yellow-400 flex-shrink-0" />
+                              <span className="text-[var(--color-nux-text-muted)] w-10 flex-shrink-0">Entrega:</span>
+                              <CustomDatePicker 
+                                value={editedProject.expectedDeliveryDate ? new Date(editedProject.expectedDeliveryDate).toISOString().split('T')[0] : ''}
+                                onChange={(val) => setEditedProject({...editedProject, expectedDeliveryDate: val})}
+                                placeholder="Seleccionar"
+                              />
+                            </div>
+                            {editedProject.status === 'ENTREGADO' && (
                               <div className="flex items-center gap-2 text-xs">
-                                <CheckCircle size={12} className="text-green-400" />
-                                <span className="text-[var(--color-nux-text-muted)]">Final:</span>
-                                <span className="font-medium">{formatDate(p.actualDeliveryDate)}</span>
+                                <CheckCircle size={12} className="text-green-400 flex-shrink-0" />
+                                <span className="text-[var(--color-nux-text-muted)] w-10 flex-shrink-0">Final:</span>
+                                <CustomDatePicker 
+                                  value={editedProject.actualDeliveryDate ? new Date(editedProject.actualDeliveryDate).toISOString().split('T')[0] : ''}
+                                  onChange={(val) => setEditedProject({...editedProject, actualDeliveryDate: val})}
+                                  placeholder="Seleccionar"
+                                />
                               </div>
                             )}
                           </>
                         ) : (
-                          <div className="flex items-center gap-2 text-xs">
-                            <Clock size={12} className="text-yellow-400" />
-                            <span className="text-[var(--color-nux-text-muted)]">Entrega:</span>
-                            <span className="font-medium">{formatDate(p.expectedDeliveryDate)}</span>
-                          </div>
-                        )}
-
-                        {p.status !== 'ENTREGADO' && p.expectedDeliveryDate && (() => {
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          const deliveryDate = new Date(p.expectedDeliveryDate);
-                          deliveryDate.setHours(0, 0, 0, 0);
-                          return deliveryDate < today;
-                        })() && (
-                          <div className="flex items-center gap-2 text-red-400 mt-2 pt-2 border-t border-red-400/10 animate-pulse">
-                            <Clock size={12} className="text-red-400" />
-                            <div className="flex flex-col">
-                              <span className="text-[9px] font-bold uppercase tracking-wider">Día en curso (Retraso)</span>
-                              <span className="font-bold">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                          <>
+                            <div className="flex items-center gap-2 text-xs">
+                              <Calendar size={12} className="text-blue-400" />
+                              <span className="text-[var(--color-nux-text-muted)]">Inicio:</span>
+                              <span className="font-medium">{formatDate(p.startDate)}</span>
                             </div>
-                          </div>
+
+                            {p.status === 'ENTREGADO' ? (
+                              <>
+                                {p.actualDeliveryDate && p.expectedDeliveryDate && new Date(p.actualDeliveryDate) > new Date(p.expectedDeliveryDate) ? (
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2 text-xs opacity-60">
+                                      <Clock size={12} className="text-yellow-400" />
+                                      <span className="text-[var(--color-nux-text-muted)]">Pactado:</span>
+                                      <span className="font-medium">{formatDate(p.expectedDeliveryDate)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-orange-400 font-bold bg-orange-400/5 p-1 rounded border border-orange-400/10">
+                                      <CheckCircle size={12} className="text-orange-400" />
+                                      <span>Final (Tardía): {formatDate(p.actualDeliveryDate)}</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <CheckCircle size={12} className="text-green-400" />
+                                    <span className="text-[var(--color-nux-text-muted)]">Final:</span>
+                                    <span className="font-medium">{formatDate(p.actualDeliveryDate)}</span>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="flex items-center gap-2 text-xs">
+                                <Clock size={12} className="text-yellow-400" />
+                                <span className="text-[var(--color-nux-text-muted)]">Entrega:</span>
+                                <span className="font-medium">{formatDate(p.expectedDeliveryDate)}</span>
+                              </div>
+                            )}
+
+                            {p.status !== 'ENTREGADO' && p.expectedDeliveryDate && (() => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              const deliveryDate = new Date(p.expectedDeliveryDate);
+                              deliveryDate.setHours(0, 0, 0, 0);
+                              return deliveryDate < today;
+                            })() && (
+                              <div className="flex items-center gap-2 text-red-400 mt-2 pt-2 border-t border-red-400/10 animate-pulse">
+                                <Clock size={12} className="text-red-400" />
+                                <div className="flex flex-col">
+                                  <span className="text-[9px] font-bold uppercase tracking-wider">Día en curso (Retraso)</span>
+                                  <span className="font-bold">{new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                </div>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>
+
                     <td className="px-6 py-4 font-medium">{formatCurrency(p.finances?.agreedPrice || 0)}</td>
                     <td className="px-6 py-4 font-medium text-red-400">{formatCurrency(p.finances?.pendingAmount || 0)}</td>
+                    
                     <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2 min-w-[120px]">
-                        <button 
-                          onClick={() => { setSelectedProject(p); setShowPaymentsModal(true); }}
-                          className="p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95" 
-                        >
-                          <FileText size={16} />
-                        </button>
-                        <button className="p-2 text-[var(--color-nux-text-muted)] hover:text-white hover:bg-[var(--color-nux-bg)] rounded-lg transition-all duration-200 hover:scale-110 active:scale-95">
-                          <Edit2 size={16} />
-                        </button>
-                        <div className="w-8 flex justify-center">
-                          {p.status === 'CANCELADO' ? (
-                            <button className="p-2 text-red-400/60 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95">
-                              <Trash2 size={16} />
+                      <div className="flex items-center justify-center gap-2 min-w-[140px]">
+                        {editingProjectId === p._id ? (
+                          <>
+                            <button 
+                              onClick={() => saveEditing()}
+                              className="p-2 text-green-400 hover:text-white hover:bg-green-500/20 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95 border border-green-500/30"
+                              title="Guardar"
+                            >
+                              <Save size={16} />
                             </button>
-                          ) : (
-                            <div className="w-8"></div>
-                          )}
-                        </div>
+                            <button 
+                              onClick={() => cancelEditing()}
+                              className="p-2 text-red-400 hover:text-white hover:bg-red-500/20 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95 border border-red-500/30"
+                              title="Cancelar"
+                            >
+                              <X size={16} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={() => { setSelectedProject(p); setShowPaymentsModal(true); }}
+                              className="p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95" 
+                              title="Ver pagos"
+                            >
+                              <FileText size={16} />
+                            </button>
+                            <button 
+                              onClick={() => startEditing(p)}
+                              className="p-2 text-[var(--color-nux-text-muted)] hover:text-white hover:bg-[var(--color-nux-bg)] rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                              title="Editar proyecto"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <div className="w-8 flex justify-center">
+                              {p.status === 'CANCELADO' && (
+                                <button className="p-2 text-red-400/60 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95">
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
+                        <button 
+                          onClick={() => {
+                            setDetailsModalProject({
+                              ...p,
+                              details: p.details || { technologies: 'No definidas', architecture: 'No definida', serviceUrls: 'Sin URLs asignadas', deployedAt: 'No desplegado', notes: 'Sin notas' }
+                            });
+                            setIsEditingDetails(false);
+                          }}
+                          className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                          title="Más Detalles"
+                        >
+                          <MoreHorizontal size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -701,6 +1068,240 @@ const Projects = () => {
           </table>
         </div>
       </div>
+
+      {detailsModalProject && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setDetailsModalProject(null)}></div>
+          <div className="relative w-full max-w-4xl bg-[var(--color-nux-surface)] border border-[var(--color-nux-border)] rounded-2xl shadow-2xl animate-dribbble-pop flex flex-col max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex-none flex items-center justify-between p-6 border-b border-[var(--color-nux-border)] bg-[var(--color-nux-bg)] rounded-t-2xl z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                  Detalles del Proyecto
+                  {isEditingDetails && <span className="text-xs px-2 py-1 bg-[var(--color-nux-primary)]/20 text-[var(--color-nux-primary)] rounded-md uppercase tracking-wider font-bold">Editando</span>}
+                </h2>
+                <p className="text-[var(--color-nux-text-muted)] mt-1">Información avanzada y técnica</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {isEditingDetails ? (
+                  <button onClick={saveDetails} className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-green-500/20 hover:scale-105 active:scale-95">
+                    <Save size={18} /> Guardar
+                  </button>
+                ) : (
+                  <button onClick={() => setIsEditingDetails(true)} className="flex items-center gap-2 bg-[var(--color-nux-primary)] hover:bg-[var(--color-nux-primary-hover)] text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95">
+                    <Edit2 size={18} /> Editar Detalles
+                  </button>
+                )}
+                <button onClick={() => setDetailsModalProject(null)} className="p-2 text-[var(--color-nux-text-muted)] hover:text-white hover:bg-white/10 rounded-xl transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 flex-auto overflow-y-auto custom-scrollbar min-h-0" data-lenis-prevent="true">
+              {/* Left Column: Quotation & General Info */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--color-nux-primary)] uppercase tracking-wider mb-4 border-b border-white/5 pb-2">Información General</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs text-[var(--color-nux-text-muted)] mb-1">Nombre de Cliente</label>
+                      {isEditingDetails ? (
+                        <input 
+                          type="text" 
+                          value={detailsModalProject.client.name} 
+                          onChange={(e) => setDetailsModalProject({...detailsModalProject, client: {...detailsModalProject.client, name: e.target.value}})}
+                          className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/40 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--color-nux-primary)] outline-none"
+                        />
+                      ) : (
+                        <div className="text-white bg-[var(--color-nux-bg)]/50 border border-transparent px-3 py-2 rounded-lg text-sm">{detailsModalProject.client.name}</div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--color-nux-text-muted)] mb-1">Compañía</label>
+                      {isEditingDetails ? (
+                        <input 
+                          type="text" 
+                          value={detailsModalProject.client.company || ''} 
+                          onChange={(e) => setDetailsModalProject({...detailsModalProject, client: {...detailsModalProject.client, company: e.target.value}})}
+                          className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/40 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--color-nux-primary)] outline-none"
+                        />
+                      ) : (
+                        <div className="text-white bg-[var(--color-nux-bg)]/50 border border-transparent px-3 py-2 rounded-lg text-sm">{detailsModalProject.client.company || 'N/A'}</div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--color-nux-text-muted)] mb-1">Tipo de Proyecto</label>
+                      {isEditingDetails ? (
+                        <select 
+                          value={detailsModalProject.serviceType} 
+                          onChange={(e) => setDetailsModalProject({...detailsModalProject, serviceType: e.target.value})}
+                          className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/40 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--color-nux-primary)] outline-none"
+                        >
+                          <option value="Landing Page">Landing Page</option>
+                          <option value="E-commerce">E-commerce</option>
+                          <option value="App Movil">App Movil</option>
+                          <option value="Software">Software</option>
+                          <option value="Otro">Otro</option>
+                        </select>
+                      ) : (
+                        <div className="text-white bg-[var(--color-nux-bg)]/50 border border-transparent px-3 py-2 rounded-lg text-sm">{detailsModalProject.serviceType}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--color-nux-primary)] uppercase tracking-wider mb-4 border-b border-white/5 pb-2 flex items-center justify-between">
+                    <span>Cotización Generada</span>
+                  </h3>
+                  
+                  <div className="w-full bg-[#111827] border border-[#26344f] rounded-2xl overflow-hidden shadow-lg mt-2 relative">
+                    {/* Header bg */}
+                    <div className="h-32 relative bg-gradient-to-br from-[#111827] via-[#111329] to-[#07111f] p-6 border-b border-[#26344f]">
+                      <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 20%, rgba(132, 82, 255, 0.55), transparent 34%), radial-gradient(circle at 80% 10%, rgba(33, 163, 245, 0.45), transparent 32%)' }}></div>
+                      <div className="relative flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6d4dfc] to-[#21a3f5] flex items-center justify-center text-white font-bold text-lg shadow-lg">N</div>
+                        <div>
+                          <div className="text-white font-bold text-lg leading-tight">Nuxelit</div>
+                          <div className="text-[#a7b4cc] text-xs">Propuesta de cotización</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-6">
+                      <div className="inline-block px-3 py-1 rounded-full bg-[#8452ff]/10 border border-[#8452ff]/50 text-[#a884ff] text-[10px] font-bold uppercase tracking-wider mb-4">
+                        COT-{detailsModalProject._id.substring(detailsModalProject._id.length - 6).toUpperCase()}
+                      </div>
+                      
+                      <h1 className="text-xl font-bold text-white mb-2 leading-tight">Cotización para {detailsModalProject.client.name}</h1>
+                      <p className="text-xs text-[#a7b4cc] mb-6">Detalles y desglose de la propuesta comercial para el proyecto solicitado.</p>
+                      
+                      <div className="bg-[#171f33] border border-[#2b3958] rounded-xl p-4 mb-4">
+                        <div className="mb-4">
+                          <div className="text-[10px] text-[#8f9bb3] uppercase tracking-wider font-bold mb-1">Servicio solicitado</div>
+                          <div className="text-white font-bold text-sm">{detailsModalProject.serviceType}</div>
+                        </div>
+                        <div className="mb-4 pt-4 border-t border-[#2b3958]">
+                          <div className="text-[10px] text-[#8f9bb3] uppercase tracking-wider font-bold mb-1">Descripción / Notas</div>
+                          <div className="text-[#dce4f2] text-xs whitespace-pre-wrap">{detailsModalProject.details.notes || 'Sin descripción detallada.'}</div>
+                        </div>
+                        <div className="flex gap-4 pt-4 border-t border-[#2b3958]">
+                          <div className="flex-1">
+                            <div className="text-[10px] text-[#8f9bb3] uppercase tracking-wider font-bold mb-1">Presupuesto</div>
+                            <div className="text-white font-bold text-base">${(detailsModalProject.finances?.agreedPrice || 0).toLocaleString()} USD</div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-[10px] text-[#8f9bb3] uppercase tracking-wider font-bold mb-1">Tiempo estimado</div>
+                            <div className="text-white font-bold text-xs mt-1">{detailsModalProject.expectedDeliveryDate ? new Date(detailsModalProject.expectedDeliveryDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : 'A convenir'}</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-[#101827] border border-[#2b3958] rounded-xl p-4">
+                        <div className="text-[10px] text-[#8f9bb3] uppercase tracking-wider font-bold mb-3">Datos del cliente</div>
+                        <div className="flex justify-between py-2 border-b border-[#26344f] text-xs">
+                          <span className="text-[#8f9bb3]">Nombre</span>
+                          <span className="text-white font-bold">{detailsModalProject.client.name}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-[#26344f] text-xs">
+                          <span className="text-[#8f9bb3]">Correo</span>
+                          <span className="text-[#21a3f5] font-bold">{detailsModalProject.client.email}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-[#26344f] text-xs">
+                          <span className="text-[#8f9bb3]">Empresa</span>
+                          <span className="text-white font-bold">{detailsModalProject.client.company || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between pt-2 text-xs items-center">
+                          <span className="text-[#8f9bb3]">Estado</span>
+                          <span className="text-[#f5b540] font-bold bg-[#f5b540]/10 px-2 py-1 rounded-full text-[10px]">{detailsModalProject.status}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Technical Details */}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--color-nux-primary)] uppercase tracking-wider mb-4 border-b border-white/5 pb-2">Detalles Técnicos</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs text-[var(--color-nux-text-muted)] mb-1">Tecnologías Usadas</label>
+                      {isEditingDetails ? (
+                        <input 
+                          type="text" 
+                          value={detailsModalProject.details.technologies} 
+                          onChange={(e) => setDetailsModalProject({...detailsModalProject, details: {...detailsModalProject.details, technologies: e.target.value}})}
+                          placeholder="Ej: React, Node.js, MongoDB"
+                          className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/40 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--color-nux-primary)] outline-none"
+                        />
+                      ) : (
+                        <div className="text-white bg-[var(--color-nux-bg)]/50 border border-transparent px-3 py-2 rounded-lg text-sm">{detailsModalProject.details.technologies}</div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--color-nux-text-muted)] mb-1">Arquitectura Propuesta</label>
+                      {isEditingDetails ? (
+                        <input 
+                          type="text" 
+                          value={detailsModalProject.details.architecture} 
+                          onChange={(e) => setDetailsModalProject({...detailsModalProject, details: {...detailsModalProject.details, architecture: e.target.value}})}
+                          className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/40 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--color-nux-primary)] outline-none"
+                        />
+                      ) : (
+                        <div className="text-white bg-[var(--color-nux-bg)]/50 border border-transparent px-3 py-2 rounded-lg text-sm">{detailsModalProject.details.architecture}</div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--color-nux-text-muted)] mb-1">URLs de Servicios</label>
+                      {isEditingDetails ? (
+                        <textarea 
+                          value={detailsModalProject.details.serviceUrls} 
+                          onChange={(e) => setDetailsModalProject({...detailsModalProject, details: {...detailsModalProject.details, serviceUrls: e.target.value}})}
+                          rows="2"
+                          className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/40 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--color-nux-primary)] outline-none resize-none"
+                        ></textarea>
+                      ) : (
+                        <div className="text-white bg-[var(--color-nux-bg)]/50 border border-transparent px-3 py-2 rounded-lg text-sm whitespace-pre-wrap">{detailsModalProject.details.serviceUrls}</div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--color-nux-text-muted)] mb-1">Desplegado en</label>
+                      {isEditingDetails ? (
+                        <input 
+                          type="text" 
+                          value={detailsModalProject.details.deployedAt} 
+                          onChange={(e) => setDetailsModalProject({...detailsModalProject, details: {...detailsModalProject.details, deployedAt: e.target.value}})}
+                          className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/40 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--color-nux-primary)] outline-none"
+                        />
+                      ) : (
+                        <div className="text-white bg-[var(--color-nux-bg)]/50 border border-transparent px-3 py-2 rounded-lg text-sm">{detailsModalProject.details.deployedAt}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-[var(--color-nux-primary)] uppercase tracking-wider mb-4 border-b border-white/5 pb-2">Notas Generales</h3>
+                  {isEditingDetails ? (
+                    <textarea 
+                      value={detailsModalProject.details.notes} 
+                      onChange={(e) => setDetailsModalProject({...detailsModalProject, details: {...detailsModalProject.details, notes: e.target.value}})}
+                      rows="4"
+                      className="w-full bg-[var(--color-nux-bg)] border border-[var(--color-nux-primary)]/40 rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--color-nux-primary)] outline-none resize-none"
+                    ></textarea>
+                  ) : (
+                    <div className="text-[var(--color-nux-text-muted)] bg-[var(--color-nux-bg)]/50 border border-transparent px-3 py-3 rounded-lg text-sm whitespace-pre-wrap italic min-h-[100px]">{detailsModalProject.details.notes}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPaymentsModal && (
         <PaymentsModal 
