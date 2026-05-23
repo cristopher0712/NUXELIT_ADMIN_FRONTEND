@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Developers from './pages/Developers';
+import Estimations from './pages/Estimations';
 
 function App() {
   useEffect(() => {
@@ -44,8 +45,10 @@ function App() {
           <Route element={<AdminLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/estimations" element={<Estimations />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/users" element={<div className="p-4">Usuarios (Próximamente)</div>} />
+
             <Route path="/settings" element={<div className="p-4">Configuración (Próximamente)</div>} />
           </Route>
         </Routes>

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
-import { LineChart, Layers, SlidersHorizontal, LogOut, Hexagon, Shield } from 'lucide-react';
+import { LineChart, Layers, Calculator, SlidersHorizontal, LogOut, Hexagon, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+
 
 const AdminLayout = () => {
   const { user, logout, loading } = useAuth();
@@ -17,8 +18,10 @@ const AdminLayout = () => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: <LineChart size={24} /> },
     { name: 'Proyectos', path: '/projects', icon: <Layers size={24} /> },
+    { name: 'Estimaciones', path: '/estimations', icon: <Calculator size={24} /> },
     { name: 'Configuración', path: '/settings', icon: <SlidersHorizontal size={24} /> },
   ];
+
 
   // Map path to title
   const getPageTitle = () => {
