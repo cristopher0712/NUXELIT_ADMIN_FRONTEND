@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import api from '../api/axios';
+import api, { setAccessToken, getAccessToken } from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -9,53 +9,129 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('nuxelit_admin_token');
-    if (token) {
+    // Attempt silent token refresh on page mount/reload
+    const initializeAuth = async () => {
       try {
-        const decoded = jwtDecode(token);
-        // Check expiration
-        if (decoded.exp * 1000 < Date.now()) {
-          logout();
-        } else {
-          // Typically we fetch user profile here, but for simplicity we rely on the decoded token or basic user data
-          setUser({ id: decoded.id, role: 'ADMIN' });
-        }
+        const response = await api.post('/admin/refresh');
+        const { accessToken } = response.data.data;
+        
+        // Save access token in memory
+        setAccessToken(accessToken);
+        
+        // Decode token to retrieve user details
+        const decoded = jwtDecode(accessToken);
+        setUser({
+          id: decoded.id,
+          name: decoded.name,
+          email: decoded.email,
+          role: decoded.role
+        });
       } catch (err) {
-        logout();
+        // User session does not exist or has expired, fail silently
+        setAccessToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    initializeAuth();
+
+    // Handle global expired session events
+    const handleAuthExpired = () => {
+      setAccessToken(null);
+      setUser(null);
+    };
+
+    window.addEventListener('auth-expired', handleAuthExpired);
+    return () => {
+      window.removeEventListener('auth-expired', handleAuthExpired);
+    };
   }, []);
 
-  const login = async (email, password) => {
-    // Modo de prueba (Bypass de Base de Datos)
-    if (email === 'admin@nuxelit.com' && password === 'admin') {
-      const fakeToken = 'fake-jwt-token-development';
-      const fakeUser = { id: 'admin123', name: 'Cris', email: 'admin@nuxelit.com', role: 'SUPERADMIN' };
-      localStorage.setItem('nuxelit_admin_token', fakeToken);
-      setUser(fakeUser);
-      return true;
-    }
-
+  /**
+   * Login Step 1: Submit email & password
+   * Returns state (REQUIRES_2FA or REQUIRES_SETUP) along with a preAuthToken
+   */
+  const loginStep1 = async (email, password) => {
     try {
-      // Código original para cuando tengas la base de datos
       const response = await api.post('/admin/login', { email, password });
+      return response.data.data; // { status, preAuthToken, qrCodeDataUrl, secret }
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Error en las credenciales');
+    }
+  };
+
+  /**
+   * Login Step 2 (Option A): Verify 6-digit TOTP code
+   */
+  const verifyTOTP = async (preAuthToken, code) => {
+    try {
+      const response = await api.post('/admin/verify-totp', { preAuthToken, code });
       const { accessToken, user: userData } = response.data.data;
-      localStorage.setItem('nuxelit_admin_token', accessToken);
+      
+      setAccessToken(accessToken);
       setUser(userData);
       return true;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Credenciales inválidas');
+      throw new Error(error.response?.data?.message || 'Código de verificación inválido');
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('nuxelit_admin_token');
-    setUser(null);
+  /**
+   * Login Step 2 (Option B): Complete first-time 2FA Setup
+   */
+  const setupTOTP = async (preAuthToken, code, newPassword) => {
+    try {
+      const response = await api.post('/admin/setup-totp', { preAuthToken, code, newPassword });
+      const { accessToken, user: userData } = response.data.data;
+      
+      setAccessToken(accessToken);
+      setUser(userData);
+      return true;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Código de confirmación incorrecto');
+    }
+  };
+
+  /**
+   * Logout from local device
+   */
+  const logout = async () => {
+    try {
+      await api.post('/admin/logout');
+    } catch (err) {
+      // Fail silently on logout errors
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+    }
+  };
+
+  /**
+   * Logout from all devices globally
+   */
+  const logoutGlobal = async () => {
+    try {
+      await api.post('/admin/logout-global');
+    } catch (err) {
+      // Fail silently
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      loginStep1, 
+      verifyTOTP, 
+      setupTOTP, 
+      logout, 
+      logoutGlobal 
+    }}>
       {children}
     </AuthContext.Provider>
   );

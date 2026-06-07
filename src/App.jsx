@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Developers from './pages/Developers';
 import Estimations from './pages/Estimations';
+import AuditConsole from './pages/AuditConsole';
 
 function App() {
   useEffect(() => {
@@ -47,7 +48,7 @@ function App() {
             <Route path="/projects" element={<Projects />} />
             <Route path="/estimations" element={<Estimations />} />
             <Route path="/developers" element={<Developers />} />
-            <Route path="/users" element={<div className="p-4">Usuarios (Próximamente)</div>} />
+            <Route path="/audit-logs" element={<AuditConsole />} />
 
             <Route path="/settings" element={<div className="p-4">Configuración (Próximamente)</div>} />
           </Route>
