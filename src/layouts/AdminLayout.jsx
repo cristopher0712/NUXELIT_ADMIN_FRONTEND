@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { LineChart, Layers, Calculator, SlidersHorizontal, LogOut, Hexagon, Shield, Terminal, X, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import LogoMark from '../components/brand/LogoMark';
 
 const AdminLayout = () => {
   const { user, logout, logoutGlobal, loading } = useAuth();
@@ -49,8 +50,7 @@ const AdminLayout = () => {
         {/* Top Brand Logo */}
         <div className="h-20 w-full flex flex-col items-center justify-center gap-1 border-b border-transparent">
           <div className="relative flex items-center justify-center mt-2">
-            <Hexagon size={32} className="text-[var(--color-nux-primary)] animate-slow-spin absolute" />
-            <Hexagon size={32} className="text-[var(--color-nux-accent)]" />
+            <LogoMark size={26} />
           </div>
           <span className="text-[9px] font-black tracking-[0.2em] bg-gradient-to-r from-[var(--color-nux-primary)] to-[var(--color-nux-accent)] bg-clip-text text-transparent uppercase text-center mt-0.5">
             NUXELIT
